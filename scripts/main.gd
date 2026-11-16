@@ -16,6 +16,10 @@ var salvataggio_remoto := ""
 
 func _ready() -> void:
 	theme = Stile.tema()
+	# i pulsanti scattano appena toccati (più affidabile con il tocco su iPad e nel browser)
+	get_tree().node_added.connect(func(n):
+		if n is BaseButton and not n is CheckBox:
+			n.action_mode = BaseButton.ACTION_MODE_BUTTON_PRESS)
 	rete = Rete.new()
 	add_child(rete)
 	rete.evento.connect(_evento_rete)
@@ -387,7 +391,7 @@ func _evento_rete(e: Dictionary) -> void:
 				partita.avvia(s, ruolo, "host", rete)
 				partita._dopo()
 		"azione":
-			if partita and partita.modo == "host" and str(e.get("uid", "")) != rete.uid:
+			if partita and partita.modo == "host":
 				var a = JSON.parse_string(str(e.get("p", "")))
 				if a is Dictionary:
 					partita.mossa_remota(a)

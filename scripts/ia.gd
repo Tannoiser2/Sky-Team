@@ -6,6 +6,11 @@ extends RefCounted
 
 const PERSO := -100000.0
 
+## Quante volte simulare il resto del round per ogni mossa candidata (0 = solo valutazione immediata)
+static var prova_avanti := 0
+static var candidati := 4
+static var _rng := RandomNumberGenerator.new()
+
 ## Sceglie l'azione per il colore c. Restituisce un Dictionary da passare a Motore.applica().
 static func scegli(s: Dictionary, c: int) -> Dictionary:
 	if s["fase"] != "piazza":
@@ -26,14 +31,29 @@ static func scegli(s: Dictionary, c: int) -> Dictionary:
 	var base := valuta(s, c)
 	var meglio := {}
 	var punti := -INF
+	var classifica := []
 	for m in l:
 		var t: Dictionary = leggero.duplicate(true)
 		Motore.piazza(t, c, m["i"], m["sp"], m["m"])
 		var p := valuta(t, c) - base
 		p -= 25.0 * absi(m["m"])
+		classifica.append([p, m])
 		if p > punti:
 			punti = p
 			meglio = m
+	# guarda avanti: per le mosse migliori gioca il resto del round più volte, con dadi del compagno a caso
+	if prova_avanti > 0 and classifica.size() > 1 and punti > -20000.0:
+		classifica.sort_custom(func(a, b): return a[0] > b[0])
+		var migliori := classifica.slice(0, mini(candidati, classifica.size()))
+		var top := -INF
+		for cand in migliori:
+			var tot := 0.0
+			for r in prova_avanti:
+				tot += _gioca_round(leggero, c, cand[1])
+			var media: float = tot / prova_avanti + 0.15 * cand[0]
+			if media > top:
+				top = media
+				meglio = cand[1]
 	# Gettone Rilancio: se la mossa migliore è pessima e ci sono gettoni, rilancia
 	if punti < -2500.0 and int(s["rilanci"]) > 0 and not s["pendente"][0] and not s["pendente"][1]:
 		return {"t": "usa_rilancio", "c": c}
@@ -52,6 +72,52 @@ static func scegli(s: Dictionary, c: int) -> Dictionary:
 				if valuta(t3, c) - base - 25.0 * absi(m["m"]) > punti + 600.0:
 					return {"t": "adatta", "c": c, "i": i}
 	return {"t": "piazza", "c": c, "i": meglio["i"], "sp": meglio["sp"], "m": meglio["m"]}
+
+## Gioca la mossa m e poi il resto del round con la scelta rapida, dadi nascosti del compagno a caso.
+static func _gioca_round(leggero: Dictionary, c: int, m: Dictionary) -> float:
+	var t: Dictionary = leggero.duplicate(true)
+	t.erase("_sim")
+	t["seme"] = _rng.randi_range(1, 2000000000)
+	# i dadi del compagno non si conoscono: li immagino
+	for d in t["mano"][1 - c]:
+		if d.get("k", "d") == "d":
+			d["v"] = _rng.randi_range(1, 6)
+	var round0: int = t["round"]
+	Motore.piazza(t, c, m["i"], m["sp"], m["m"])
+	var passi := 0
+	while t["fase"] == "piazza" and t["round"] == round0 and passi < 20:
+		passi += 1
+		var chi: int = t["turno"]
+		if t["pendente"][0] or t["pendente"][1]:
+			chi = 0 if t["pendente"][0] else 1
+			Motore.rilancia(t, chi, [])
+			continue
+		var mm := _rapida(t, chi)
+		if mm.is_empty():
+			break
+		Motore.piazza(t, chi, mm["i"], mm["sp"], mm["m"])
+	if t["esito"] == "perso":
+		return PERSO
+	if t["esito"] == "vinto":
+		return -PERSO
+	return valuta(t, c)
+
+## Scelta rapida (solo valutazione immediata)
+static func _rapida(s: Dictionary, c: int) -> Dictionary:
+	var l := Motore.mosse(s, c, true)
+	if l.is_empty():
+		return {}
+	var leggero := copia_leggera(s)
+	var meglio := {}
+	var punti := -INF
+	for m in l:
+		var t: Dictionary = leggero.duplicate(true)
+		Motore.piazza(t, c, m["i"], m["sp"], m["m"])
+		var p := valuta(t, c) - 25.0 * absi(m["m"])
+		if p > punti:
+			punti = p
+			meglio = m
+	return meglio
 
 ## Copia dello stato senza diario, segnata come simulazione (più veloce da duplicare)
 static func copia_leggera(s: Dictionary) -> Dictionary:
