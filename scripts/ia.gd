@@ -258,6 +258,16 @@ static func valuta(s: Dictionary, c: int) -> float:
 			p -= 2500.0 * (4 - int(s["ghiaccio"]))
 		if Motore.ha(s, "stagista"):
 			p -= 2500.0 * s["stagisti"].size()
+	# --- capacità di arrivare: con carrello e flap estesi l'aereo fatica ad avanzare
+	if not fine and s["speciale"] != "ter":
+		var giri_mov: int = Motore.ULTIMA_QUOTA - int(s["quota"]) - 1
+		if not (spazi.has("mot0") and spazi.has("mot1")):
+			giri_mov += 1
+		var dist: int = int(s["ultima"]) - int(s["pos"])
+		var e := _avanzamento_max(int(s["blu"]) - Motore.vento_valore(s), int(s["ara"]) - Motore.vento_valore(s))
+		var manca := float(dist) - e * giri_mov
+		if manca > 0:
+			p -= 1800.0 * manca
 	# --- bilancio: dadi liberi ancora disponibili contro cose ancora da fare
 	p += _bilancio(s, fine)
 	# --- potenziale dei dadi che mi restano
@@ -288,6 +298,27 @@ static func valuta(s: Dictionary, c: int) -> float:
 		if al["stato"] == "attivo":
 			p -= 220.0
 	return p
+
+static var _dist_max := []
+
+## Avanzamento medio per round se si cerca di andare veloci (ognuno sceglie il più alto fra 3 dadi)
+static func _avanzamento_max(blu: int, ara: int) -> float:
+	if _dist_max.is_empty():
+		var m := []
+		for v in range(1, 7):
+			m.append((pow(v, 3) - pow(v - 1, 3)) / 216.0)
+		_dist_max.resize(13)
+		_dist_max.fill(0.0)
+		for a in 6:
+			for b in 6:
+				_dist_max[a + b + 2] += m[a] * m[b]
+	var e := 0.0
+	for t in range(2, 13):
+		if t > blu:
+			e += _dist_max[t]
+		if t > ara:
+			e += _dist_max[t]
+	return e
 
 static func _bilancio(s: Dictionary, fine: bool) -> float:
 	var spazi: Dictionary = s["spazi"]
