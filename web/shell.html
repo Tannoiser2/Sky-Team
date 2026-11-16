@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0b1220">
+<title>Sky Team</title>
+<link rel="icon" href="img/icona.png">
+<style>
+@font-face { font-family: 'Titolo'; src: url('font/Montserrat-ExtraBold.ttf'); }
+@font-face { font-family: 'Testo'; src: url('font/BarlowCondensed-SemiBold.ttf'); }
+html, body, #canvas { margin: 0; padding: 0; border: 0; }
+body { color: #e9eef7; background: #0b1220; overflow: hidden; touch-action: none; font-family: 'Testo', sans-serif; }
+#canvas { display: block; width: 100vw; height: 100vh; }
+#canvas:focus { outline: none; }
+#avvio { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px;
+  background: linear-gradient(180deg, #0b2a5c 0%, #3f86d6 55%, #b9773b 55.2%, #6b3f1a 100%); z-index: 10; text-align: center; padding: 20px; }
+#avvio h1 { font-family: 'Titolo', sans-serif; font-weight: 400; font-size: min(120px, 16vw); color: #fff; margin: 0; letter-spacing: 2px;
+  text-shadow: 0 4px 0 #0b2a5c, 0 10px 24px rgba(0,0,0,.5); }
+#avvio .box { background: rgba(11,18,32,.9); border: 3px solid #ffcb2f; border-radius: 22px; padding: 22px 34px; max-width: 640px; min-width: 260px; box-shadow: 0 10px 30px rgba(0,0,0,.5); }
+#avvio p { font-size: 24px; margin: 8px 0; }
+#avvio button { font-family: 'Titolo', sans-serif; font-size: 38px; color: #fff; background: #2f5bd3; border: 4px solid #a9c2ff;
+  border-radius: 16px; padding: 10px 40px; cursor: pointer; letter-spacing: 1px; }
+#avvio button:active { transform: scale(.97); }
+#stato { color: #ffcb2f; font-size: 24px; min-height: 30px; text-shadow: 0 2px 4px #000; }
+#stato progress { width: 360px; height: 18px; max-width: 80vw; }
+</style>
+$GODOT_HEAD_INCLUDE
+</head>
+<body>
+<canvas id="canvas">Il tuo browser non supporta i canvas.</canvas>
+<div id="avvio">
+  <h1>SKY TEAM</h1>
+  <div class="box">
+    <p>Pilota e Copilota, due mazzi di dadi e un aereo da far atterrare. Con l'espansione Turbolenze.</p>
+    <button id="apri">DECOLLA</button>
+  </div>
+  <div id="stato"></div>
+</div>
+<div id="versione" style="position:fixed;right:8px;bottom:6px;color:#c9d3e6;font-size:13px;z-index:11">versione __VERSIONE__</div>
+<script src="$GODOT_URL?v=__VERSIONE__"></script>
+<script type="module">
+import './js/ponte.js?v=__VERSIONE__';
+import { sbloccaAudio } from './js/suoni.js?v=__VERSIONE__';
+
+const GODOT_CONFIG = $GODOT_CONFIG;
+// ogni pubblicazione ha il suo numero: il browser non riusa la versione vecchia del gioco
+const VERSIONE = '__VERSIONE__';
+GODOT_CONFIG.mainPack = (GODOT_CONFIG.mainPack || 'index.pck') + '?v=' + VERSIONE;
+const engine = new Engine(GODOT_CONFIG);
+const stato = document.getElementById('stato');
+const q = new URLSearchParams(location.search);
+
+async function schermoAcceso() {
+  try { if ('wakeLock' in navigator) await navigator.wakeLock.request('screen'); } catch (e) { /* ok */ }
+}
+
+let partito = false;
+async function parti() {
+  if (partito) return;
+  partito = true;
+  sbloccaAudio(); schermoAcceso();
+  const missing = Engine.getMissingFeatures({ threads: false });
+  if (missing.length) {
+    stato.textContent = 'Questo browser non riesce ad aprire il gioco: ' + missing.join(', ');
+    return;
+  }
+  stato.innerHTML = 'Controlli prima del volo... <progress id="pr"></progress>';
+  const pr = document.getElementById('pr');
+  try {
+    await engine.startGame({
+      onProgress(cur, tot) { if (cur > 0 && tot > 0) { pr.value = cur; pr.max = tot; } },
+    });
+    document.getElementById('avvio').remove();
+    document.getElementById('versione').remove();
+  } catch (e) {
+    console.error(e);
+    stato.textContent = 'Errore: ' + (e?.message || e);
+  }
+}
+document.getElementById('apri').addEventListener('click', parti);
+if (q.has('auto') || q.has('subito')) parti();
+</script>
+</body>
+</html>

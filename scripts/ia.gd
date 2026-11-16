@@ -152,7 +152,7 @@ static func valuta(s: Dictionary, c: int) -> float:
 		var n: int = s["aerei"][i]
 		if n > 0:
 			var d := i - int(s["pos"])
-			var pena := 150.0 + 500.0 / giri_t + max(0.0, 260.0 - 80.0 * d)
+			var pena: float = 150.0 + 500.0 / giri_t + max(0.0, 260.0 - 80.0 * d)
 			if d <= 1 and not motori_fatti and not fine:
 				pena += 500.0
 			p -= n * pena
@@ -190,6 +190,8 @@ static func valuta(s: Dictionary, c: int) -> float:
 			p -= 2500.0 * (4 - int(s["ghiaccio"]))
 		if Motore.ha(s, "stagista"):
 			p -= 2500.0 * s["stagisti"].size()
+	# --- bilancio: dadi liberi ancora disponibili contro cose ancora da fare
+	p += _bilancio(s, fine)
 	# --- potenziale dei dadi che mi restano
 	for d in s["mano"][c]:
 		if d.get("k", "d") == "d":
@@ -198,17 +200,18 @@ static func valuta(s: Dictionary, c: int) -> float:
 	p += 70.0 * int(s["caffe"])
 	p += 60.0 * int(s["rilanci"])
 	if Motore.ha(s, "cherosene") or Motore.ha(s, "perdita"):
-		var k: int = s["cherosene"]
+		var k: int = int(s["cherosene"]) + 2
 		if Motore.ha(s, "cherosene") and not spazi.has("kero"):
 			k -= 6
 		if Motore.ha(s, "perdita") and not (spazi.has("mot0") and spazi.has("mot1")):
 			k -= 2
-		var serve := (giri_rimasti - 1) * (1 if Motore.ha(s, "cherosene") else 2)
+		var futuri := giri_rimasti - 1
+		var serve := futuri * (2 if Motore.ha(s, "cherosene") else 2)
 		if k < 0:
 			p -= 30000.0
 		elif k < serve:
-			p -= 6000.0 * (serve - k)
-		p += 18.0 * min(k, 20)
+			p -= 2500.0 * (serve - k)
+		p += 60.0 * min(k, 20)
 	if Motore.ha(s, "stagista"):
 		p += 200.0 * (6 - s["stagisti"].size())
 		if s["stagisti"].size() > giri_rimasti * 2:
@@ -216,6 +219,58 @@ static func valuta(s: Dictionary, c: int) -> float:
 	for al in s["allarmi"]:
 		if al["stato"] == "attivo":
 			p -= 220.0
+	return p
+
+static func _bilancio(s: Dictionary, fine: bool) -> float:
+	var spazi: Dictionary = s["spazi"]
+	var futuri: int = Motore.ULTIMA_QUOTA - int(s["quota"])
+	var per_round := 1 if s["speciale"] == "ter" else 2
+	if s["speciale"] == "ter":
+		per_round = 2
+	var libero := [0.0, 0.0]
+	for col in 2:
+		var obbl := 0
+		if not spazi.has("asse%d" % col): obbl += 1
+		if s["speciale"] != "ter" and not spazi.has("mot%d" % col): obbl += 1
+		libero[col] = maxf(0.0, _dadi_rimasti(s, col) - obbl) + 0.75 * futuri * per_round
+	var bisogno := [0.0, 0.0]
+	var comune := 0.0
+	if s["speciale"] != "waw":
+		for x in s["carrello"]:
+			if not x: bisogno[0] += 1.3
+	for x in s["flap"]:
+		if not x: bisogno[1] += 1.3
+	if Motore.ha(s, "ghiaccio"):
+		var g: int = 4 - int(s["ghiaccio"])
+		bisogno[0] += g * 1.3
+		comune += g * 1.3
+	elif s["speciale"] != "ter":
+		var nf := 0
+		for x in s["freni"]:
+			if x: nf += 1
+		bisogno[0] += maxi(0, 3 - nf) * 1.2
+	comune += Motore.aerei_totali(s) * 1.1
+	if Motore.ha(s, "stagista"):
+		comune += s["stagisti"].size() * 1.2
+	if Motore.ha(s, "cherosene"):
+		comune += (futuri + (0 if spazi.has("kero") else 1)) * 0.8
+	for al in s["allarmi"]:
+		if al["stato"] == "attivo":
+			comune += 1.0
+	var p := 0.0
+	var marg := [libero[0] - bisogno[0], libero[1] - bisogno[1]]
+	var tot: float = marg[0] + marg[1] - comune
+	var peso := 1.0 + 3.0 / (futuri + 1)
+	for col in 2:
+		if marg[col] < 0:
+			p -= 900.0 * peso * (-marg[col])
+		elif marg[col] < 1.5:
+			p -= 250.0 * peso * (1.5 - marg[col])
+	if tot < 0:
+		p -= 900.0 * peso * (-tot)
+	elif tot < 2.0:
+		p -= 250.0 * peso * (2.0 - tot)
+	p += 120.0 * tot
 	return p
 
 ## Penalità attesa per una coppia di spazi (asse o motori) non ancora completa.
@@ -316,10 +371,10 @@ static func _pena_asse(s: Dictionary, a: int, fine: bool) -> float:
 		p += 20000.0
 	# virate in arrivo
 	for d in [1, 2]:
-		var c := Motore.casella(s, int(s["pos"]) + d)
+		var c := Motore.casella(s, int(s["pos"]) + d - 1)
 		var v: String = c.get("v", "")
 		if v != "" and v[a + 2] == "x":
-			p += 900.0 / d
+			p += 2600.0 / d
 	return p
 
 ## Qualità di una velocità (somma dei motori) in questo round
@@ -338,10 +393,10 @@ static func _qualita_velocita(s: Dictionary, somma: int) -> float:
 			return -30000.0
 		if pos >= int(s["ultima"]):
 			return -30000.0
-		pos += 1
 		var v: String = Motore.casella(s, pos).get("v", "")
 		if v != "" and v[int(s["asse"]) + 2] == "x":
 			return -12000.0
+		pos += 1
 	return _qualita_pos(s, pos, true)
 
 ## Quanto è buona la posizione pos a fine di questo round
@@ -357,9 +412,9 @@ static func _qualita_pos(s: Dictionary, pos: int, questo_round: bool) -> float:
 	var q := 0.0
 	var scorta := giri - dist
 	if scorta < 0:
-		q -= 900.0 * (-scorta)
+		q -= 2500.0 * (-scorta)
 	elif scorta == 0 and dist > 0:
-		q -= 260.0
+		q -= 700.0
 	elif dist == 0 and giri > 0:
 		q -= 220.0 * giri
 	elif scorta >= 2:

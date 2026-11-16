@@ -615,7 +615,7 @@ static func _effetto(s: Dictionary, c: int, sp: String, v: int, k: String) -> vo
 		"kero":
 			s["cherosene"] -= v
 			_log(s, "%s gestisce il cherosene: -%d (restano %d)." % [chi, v, s["cherosene"]])
-			if s["cherosene"] < 0:
+			if s["cherosene"] <= -3:
 				_perdi(s, "Cherosene finito.")
 		"stag":
 			var t: int
@@ -685,7 +685,7 @@ static func _motori(s: Dictionary) -> void:
 		var p := absi(v0 - v1) + 1
 		s["cherosene"] -= p
 		_log(s, "Perdita: -%d cherosene (restano %d)." % [p, s["cherosene"]])
-		if s["cherosene"] < 0:
+		if s["cherosene"] <= -3:
 			_perdi(s, "Cherosene finito per la perdita.")
 			return
 	if v0 == v1 and abil(s, "padronanza"):
@@ -715,11 +715,12 @@ static func _avanza(s: Dictionary, passi: int) -> void:
 		if s["pos"] >= s["ultima"]:
 			_perdi(s, "Avete sorvolato l'aeroporto senza atterrare.")
 			return
-		s["pos"] += 1
+		# il simbolo della virata sta tra la casella attuale e la successiva
 		var vir: String = casella(s, s["pos"]).get("v", "")
 		if vir != "" and vir[int(s["asse"]) + 2] == "x":
 			_perdi(s, "Virata mancata: l'asse non era nella posizione richiesta.")
 			return
+		s["pos"] += 1
 
 static func _perdi(s: Dictionary, motivo: String) -> void:
 	if s["esito"] != "":
@@ -860,7 +861,7 @@ static func fine_round(s: Dictionary) -> void:
 	if ha(s, "cherosene") and not s["spazi"].has("kero"):
 		s["cherosene"] -= 6
 		_log(s, "Nessun dado sul cherosene: -6 (restano %d)." % s["cherosene"])
-		if s["cherosene"] < 0:
+		if s["cherosene"] <= -3:
 			_perdi(s, "Cherosene finito.")
 			return
 	if ultimo_round(s):

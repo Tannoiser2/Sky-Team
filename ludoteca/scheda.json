@@ -1,0 +1,14 @@
+{
+  "titolo": "Sky Team",
+  "sottotitolo": "con l'espansione Turbolenze",
+  "descrizione": "Il cooperativo per due di Luc Rémond: Pilota e Copilota piazzano i dadi in silenzio sulla plancia di comando per far atterrare l'aereo. Asse, motori, radio, carrello, flap, freni e caffè, con la grafica originale. Tutti gli aeroporti del gioco base, dell'espansione Turbolenze e degli scenari promozionali (53 voli), tutti i moduli (cherosene, perdita, freni da ghiaccio, vento, tirocinante, allarmi, tempo reale, pinguini dell'Antartide) e le sei abilità speciali. Si gioca con un compagno guidato dal computer, contro il Copilota Automa del solitario ufficiale oppure online con un amico. Tutto in italiano, volo salvato a ogni mossa.",
+  "online": true,
+  "sezione": "conversione",
+  "ordine": 13,
+  "bgg": 373106,
+  "generi": [
+    "Cooperativo",
+    "Dadi",
+    "Due giocatori"
+  ]
+}

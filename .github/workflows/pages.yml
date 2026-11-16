@@ -1,5 +1,4 @@
 # Costruisce la versione web (gioco Godot) e la pubblica su GitHub Pages
-# (e, se ci sono i segreti, sulla ludoteca privata di Cloudflare).
 # Non parte a ogni modifica: si avvia a mano (Actions → Pubblica → Run workflow)
 # oppure con un commit che nel messaggio contiene [pubblica].
 name: Pubblica
@@ -39,13 +38,6 @@ jobs:
 
       - name: Esporta il gioco
         run: tools/costruisci_web.sh ./godot
-
-      - name: Pubblica su Cloudflare (ludoteca privata)
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          LUDOTECA_DOMINIO: ludoteca-digitale.com
-        run: python3 tools/pubblica_cloudflare.py build/web sky-team sky-team
 
       - uses: actions/upload-pages-artifact@v3
         if: ${{ !github.event.repository.private }}
