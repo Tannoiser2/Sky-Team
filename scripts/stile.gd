@@ -67,12 +67,30 @@ static func tema() -> Theme:
 	t.set_stylebox("disabled", "Button", scatola(Color("1a2438"), Color("2c3950"), 10, 2))
 	t.set_stylebox("focus", "Button", StyleBoxEmpty.new())
 	t.set_stylebox("panel", "PanelContainer", scatola(Color(0.08, 0.12, 0.2, 0.94), BORDO, 14, 2))
+	t.set_icon("unchecked", "CheckBox", _casella(false))
+	t.set_icon("checked", "CheckBox", _casella(true))
 	t.set_stylebox("normal", "LineEdit", scatola(Color("0e1729"), BORDO, 8, 2))
 	t.set_stylebox("focus", "LineEdit", scatola(Color("0e1729"), GIALLO, 8, 2))
 	t.set_color("font_color", "LineEdit", TESTO)
 	t.set_font_size("font_size", "LineEdit", 30)
 	t.set_font("font", "LineEdit", cifre())
 	return t
+
+## Casella di spunta disegnata (niente simboli dei font)
+static func _casella(piena: bool) -> ImageTexture:
+	var n := 34
+	var img := Image.create(n, n, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0, 0, 0, 0))
+	for y in n:
+		for x in n:
+			var bordo := x < 3 or y < 3 or x >= n - 3 or y >= n - 3
+			if bordo:
+				img.set_pixel(x, y, Color.WHITE)
+			elif piena and x >= 7 and y >= 7 and x < n - 7 and y < n - 7:
+				img.set_pixel(x, y, GIALLO)
+			else:
+				img.set_pixel(x, y, Color(0.05, 0.08, 0.14, 1))
+	return ImageTexture.create_from_image(img)
 
 static func scatola(fondo: Color, bordo: Color, raggio := 10, spessore := 2) -> StyleBoxFlat:
 	var s := StyleBoxFlat.new()

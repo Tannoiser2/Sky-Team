@@ -262,8 +262,16 @@ func _mostra_dettaglio() -> void:
 			cb.focus_mode = Control.FOCUS_NONE
 			cb.toggled.connect(func(v3): abilita_scelte[a] = v3; _mostra_dettaglio())
 			opz.add_child(cb)
-			var d := Stile.paragrafo(Testi.ABILITA[a][1], 19, Stile.TESTO_DEBOLE)
-			opz.add_child(d)
+			var hc2 := HBoxContainer.new()
+			hc2.add_theme_constant_override("separation", 10)
+			var tr := TextureRect.new()
+			tr.texture = Stile.tex("res://assets/img/abilita/%s.webp" % a)
+			tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT
+			tr.custom_minimum_size = Vector2(170, 112)
+			hc2.add_child(tr)
+			hc2.add_child(Stile.paragrafo(Testi.ABILITA[a][1], 19, Stile.TESTO_DEBOLE))
+			opz.add_child(hc2)
 	var hb := HBoxContainer.new()
 	hb.add_theme_constant_override("separation", 12)
 	dettaglio.add_child(hb)

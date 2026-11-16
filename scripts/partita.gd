@@ -25,6 +25,7 @@ var riga_azioni: HFlowContainer
 var l_altro: Label
 var dadi_altro: Mano
 var carta_automa: TextureRect
+var carte_abilita: HFlowContainer
 var registro: VBoxContainer
 var scorri_reg: ScrollContainer
 var finale: PanelContainer
@@ -77,6 +78,18 @@ func _costruisci() -> void:
 	colonna.add_child(l_titolo)
 	l_info = Stile.paragrafo("", 22, Stile.TESTO_DEBOLE)
 	colonna.add_child(l_info)
+	carte_abilita = HFlowContainer.new()
+	carte_abilita.add_theme_constant_override("h_separation", 6)
+	carte_abilita.add_theme_constant_override("v_separation", 6)
+	colonna.add_child(carte_abilita)
+	for a in s["abilita"]:
+		var tr := TextureRect.new()
+		tr.texture = Stile.tex("res://assets/img/abilita/%s.webp" % a)
+		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT
+		tr.custom_minimum_size = Vector2(190, 125)
+		tr.tooltip_text = Testi.ABILITA[a][1]
+		carte_abilita.add_child(tr)
 	l_tempo = Stile.etichetta("", 40, Stile.GIALLO, Stile.cifre())
 	l_tempo.visible = false
 	colonna.add_child(l_tempo)

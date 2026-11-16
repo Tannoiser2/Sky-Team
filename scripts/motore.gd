@@ -392,6 +392,8 @@ static func controlla(s: Dictionary, c: int, i: int, sp: String, m: int = 0, aut
 		return "Devi prima piazzare il gettone appena ottenuto."
 	var dd: Dictionary = s["mano"][c][i]
 	var k: String = dd.get("k", "d")
+	if s["spazi"].has("insieme_a") and int(s["spazi"]["insieme_a"]["c"]) != c and sp != "insieme" and k == "d":
+		return "Devi rispondere su «Lavorare insieme»."
 	if m != 0:
 		if k == "stag":
 			return "Il gettone Tirocinante non si modifica con il caffè."
