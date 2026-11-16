@@ -111,7 +111,7 @@ func _blocchi() -> Dictionary:
 		h = minf(h, r_moduli.size.y * 0.55)
 		var ww := h * 300.0 / 1426.0
 		b["kero"] = Rect2(x + (w - ww) * 0.5, y, ww, h)
-		y += h + 10
+		y += h + 10 + w * 0.2
 	if Motore.ha(s, "allarmi"):
 		var h3 := minf(w / 300.0 * 1121.0, r_moduli.end.y - y - (w if Motore.ha(s, "vento") else 0.0) - 10)
 		var w3 := h3 * 300.0 / 1121.0
@@ -124,8 +124,8 @@ func _blocchi() -> Dictionary:
 		b["insieme"] = Rect2(x, y, w, w * 0.55)
 		y += w * 0.55 + 10
 	if Motore.ha(s, "vento"):
-		var h2 := minf(w, r_moduli.end.y - y)
-		b["vento"] = Rect2(x + (w - h2) * 0.5, r_moduli.end.y - h2, h2, h2)
+		var h2 := minf(w * 0.8, r_moduli.end.y - y - w * 0.15)
+		b["vento"] = Rect2(x + (w - h2) * 0.5, r_moduli.end.y - h2 - w * 0.15, h2, h2)
 	return b
 
 func pt(p: Vector2) -> Vector2:
@@ -193,7 +193,11 @@ func _disegna_moduli() -> void:
 		var v: int = s["cherosene"]
 		var y := r.position.y + (274.0 + (20 - v) * 47.55) / 1426.0 * r.size.y
 		var x := r.position.x + 175.0 / 300.0 * r.size.x
-		draw_colored_polygon(PackedVector2Array([Vector2(x - 26 * k, y - 14 * k), Vector2(x - 26 * k, y + 14 * k), Vector2(x - 2 * k, y)]), Stile.GIALLO)
+		var lw := r.size.x
+		draw_rect(Rect2(x - lw * 0.32, y - 4, lw * 0.5, 8), Color.BLACK)
+		draw_rect(Rect2(x - lw * 0.3, y - 2.5, lw * 0.46, 5), Stile.GIALLO)
+		draw_colored_polygon(PackedVector2Array([Vector2(x - lw * 0.42, y - lw * 0.09), Vector2(x - lw * 0.42, y + lw * 0.09), Vector2(x - lw * 0.28, y)]), Stile.GIALLO)
+		Stile.testo_bordato(self, Stile.cifre(), Vector2(r.position.x + r.size.x * 0.5, r.end.y + lw * 0.16), "Cherosene %d" % v, int(lw * 0.16), Stile.GIALLO, lw * 2.4)
 		Stile.testo_bordato(self, Stile.cifre(), Vector2(r.position.x + r.size.x * 0.5, r.end.y + 4), "", 10, Color.WHITE)
 		if Motore.ha(s, "perdita"):
 			var c := r.position + Vector2(150.0 / 300.0, 142.0 / 1426.0) * r.size
@@ -234,7 +238,7 @@ func _disegna_moduli() -> void:
 		var l4 := r4.size.x * 0.4
 		draw_circle(c4, l4 * 0.58, Color(0.05, 0.08, 0.15))
 		draw_texture_rect(Stile.tex("res://assets/img/moduli/vento_aereo.webp"), Rect2(c4 - Vector2(l4, l4 * 0.93) * 0.5, Vector2(l4, l4 * 0.93)), false)
-		Stile.testo_bordato(self, Stile.cifre(), c4 + Vector2(0, r4.size.y * 0.36), "Vento %+d" % Motore.vento_valore(s), int(r4.size.x * 0.11), Stile.GIALLO, r4.size.x)
+		Stile.testo_bordato(self, Stile.cifre(), c4 + Vector2(0, r4.size.y * 0.66), "Vento %+d" % Motore.vento_valore(s), int(r4.size.x * 0.14), Stile.GIALLO, r4.size.x * 1.5)
 
 func _copri(p: Vector2, t: String) -> void:
 	var r := Rect2(pt(p) - Vector2(LATO, LATO) * k * 0.55, Vector2(LATO, LATO) * k * 1.1)

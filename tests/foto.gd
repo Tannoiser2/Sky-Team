@@ -34,9 +34,9 @@ func _init() -> void:
 	# il giocatore sceglie il primo dado
 	if p.s["turno"] == 0:
 		p._dado(0)
-	print("evidenzia ", p.tavolo.evidenzia, " scelto ", p.scelto)
+
 	await create_timer(0.3).timeout
-	print("evidenzia dopo ", p.tavolo.evidenzia, " scelto ", p.scelto)
+
 	await _foto(dir, "3_dado_scelto")
 	# lascia giocare l'IA anche per il giocatore umano per qualche round
 	var t0 := Time.get_ticks_msec()
