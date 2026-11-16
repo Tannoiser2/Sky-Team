@@ -1,0 +1,817 @@
+[
+{
+"id": "yul",
+"pista": "yul_a",
+"codice": "YUL",
+"nome": "Montréal-Trudeau",
+"colore": "verde",
+"moduli": [],
+"abilita": 0,
+"quota": "verde",
+"fonte": "base",
+"speciale": "",
+"testo": "Il primo volo procede bene. Il sole sorge all'orizzonte e il paesaggio innevato sul San Lorenzo è magnifico: condizioni perfette per un atterraggio tranquillo."
+},
+{
+"id": "lhr1",
+"pista": "lhr_a",
+"codice": "LHR",
+"nome": "Heathrow",
+"colore": "verde",
+"moduli": [],
+"abilita": 0,
+"quota": "verde",
+"fonte": "base",
+"speciale": "",
+"testo": "Il Tamigi taglia un canale nero tra le luci di Londra mentre vi avvicinate all'aeroporto. C'è traffico in fondo all'avvicinamento. Mantenete la calma e atterrate."
+},
+{
+"id": "hnd1",
+"pista": "hnd_a",
+"codice": "HND",
+"nome": "Haneda",
+"colore": "verde",
+"moduli": [],
+"abilita": 0,
+"quota": "verde",
+"fonte": "base",
+"speciale": "",
+"testo": "Con l'iconico Monte Fuji sullo sfondo, dovete compiere un'ampia virata a sinistra per portarvi sulla baia di Tokyo, allineati con la pista che si protende sull'acqua."
+},
+{
+"id": "osl1",
+"pista": "osl_a",
+"codice": "OSL",
+"nome": "Gardermoen",
+"colore": "verde",
+"moduli": [
+"cherosene"
+],
+"abilita": 0,
+"quota": "verde",
+"fonte": "base",
+"speciale": "",
+"testo": "Iniziate la discesa su Oslo, la città alla vostra sinistra e il sole che luccica sul lungo e stretto lago Øyeren alla vostra destra. Tenete d'occhio il cherosene."
+},
+{
+"id": "atl1",
+"pista": "atl_a",
+"codice": "ATL",
+"nome": "Hartsfield-Jackson",
+"colore": "verde",
+"moduli": [
+"stagista"
+],
+"abilita": 0,
+"quota": "verde",
+"fonte": "base",
+"speciale": "",
+"testo": "Uscendo dalle nuvole sorvolate le colline degli Appalachi e vedete Atlanta... e un cielo pieno di traffico. Come se non bastasse, avete un Tirocinante agitato da formare. Buona fortuna."
+},
+{
+"id": "prg1",
+"pista": "prg_a",
+"codice": "PRG",
+"nome": "Václav Havel",
+"colore": "verde",
+"moduli": [
+"cherosene"
+],
+"abilita": 2,
+"quota": "verde",
+"fonte": "base",
+"speciale": "",
+"testo": "Le vostre abilità migliorano. Usate queste Abilità speciali per atterrare sani e salvi a Praga, uno dei centri culturali d'Europa, nel cuore della vecchia Boemia."
+},
+{
+"id": "lhr2",
+"pista": "lhr_b",
+"codice": "LHR",
+"nome": "Heathrow",
+"colore": "giallo",
+"moduli": [
+"stagista"
+],
+"abilita": 0,
+"quota": "verde",
+"fonte": "base",
+"speciale": "",
+"testo": "La fitta nebbia, comune a Londra, ha riempito il cielo di aerei in attesa sopra la capitale britannica. Dovrete restare vigili fin dall'inizio dell'avvicinamento!"
+},
+{
+"id": "tgu1",
+"pista": "tgu_a",
+"codice": "TGU",
+"nome": "Toncontín",
+"colore": "giallo",
+"moduli": [
+"cherosene"
+],
+"abilita": 2,
+"quota": "verde",
+"fonte": "base",
+"speciale": "",
+"testo": "Questo aeroporto è incastonato in una conca di montagne: dovrete scendere rapidamente e fare una virata finale molto stretta. Benvenuti in Honduras!"
+},
+{
+"id": "gig1",
+"pista": "gig_a",
+"codice": "GIG",
+"nome": "Galeão",
+"colore": "giallo",
+"moduli": [
+"vento"
+],
+"abilita": 1,
+"quota": "verde",
+"fonte": "base",
+"speciale": "",
+"testo": "La torre di controllo di Rio de Janeiro non risponde. Il forte vento in coda vi porta troppo veloci sopra la spiaggia di Copacabana. Fate un'ampia virata e controllate la velocità."
+},
+{
+"id": "kef1",
+"pista": "kef_a",
+"codice": "KEF",
+"nome": "Keflavík",
+"colore": "giallo",
+"moduli": [
+"ghiaccio"
+],
+"abilita": 1,
+"quota": "verde",
+"fonte": "base",
+"speciale": "",
+"testo": "Bucando le nuvole basse vedete la penisola con l'aeroporto islandese, tutto bianco di neve fresca. Servirà un tocco leggero per arrivare sani e salvi nella «terra del fuoco e del ghiaccio»."
+},
+{
+"id": "prg2",
+"pista": "prg_b",
+"codice": "PRG",
+"nome": "Václav Havel",
+"colore": "giallo",
+"moduli": [
+"perdita"
+],
+"abilita": 2,
+"quota": "verde",
+"fonte": "base",
+"speciale": "",
+"testo": "Il cielo è limpido e regala una splendida vista dei Carpazi in lontananza... Suona un allarme: state perdendo carburante. Ne avrete abbastanza per arrivare?"
+},
+{
+"id": "kul1",
+"pista": "kul_a",
+"codice": "KUL",
+"nome": "Kuala Lumpur",
+"colore": "giallo",
+"moduli": [
+"cherosene"
+],
+"abilita": 1,
+"quota": "verde",
+"fonte": "base",
+"speciale": "",
+"testo": "Fate bene a preoccuparvi dei temporali della Malesia... Tenete l'aereo in linea tra le masse temporalesche. Sarà un atterraggio movimentato: gestite la velocità e che la fortuna sia con voi."
+},
+{
+"id": "atl2",
+"pista": "atl_b",
+"codice": "ATL",
+"nome": "Hartsfield-Jackson",
+"colore": "giallo",
+"moduli": [
+"perdita"
+],
+"abilita": 1,
+"quota": "verde",
+"fonte": "base",
+"speciale": "",
+"testo": "Vi avvicinate a uno degli aeroporti più trafficati del mondo... il giorno del Ringraziamento. Non avete mai visto un traffico così in tutta la carriera, ma una perdita di carburante vi costringe a tirare dritto."
+},
+{
+"id": "pbh1",
+"pista": "pbh_a",
+"codice": "PBH",
+"nome": "Paro",
+"colore": "rosso",
+"moduli": [
+"cherosene",
+"tempo"
+],
+"abilita": 2,
+"quota": "rossa",
+"fonte": "base",
+"speciale": "",
+"testo": "Le chiamano colline, ma altrove sarebbero montagne. Atterrate in Bhutan, ai margini dell'Himalaya, a oltre 2000 metri di quota. È una valle stretta e le montagne sono altissime e frastagliate..."
+},
+{
+"id": "hnd2",
+"pista": "hnd_b",
+"codice": "HND",
+"nome": "Haneda",
+"colore": "rosso",
+"moduli": [
+"cherosene",
+"stagista"
+],
+"abilita": 1,
+"quota": "rossa",
+"fonte": "base",
+"speciale": "",
+"testo": "Il vostro corridoio aereo è stato ridotto. È hanami, la festa dei ciliegi in fiore, e il cielo è pieno di aerei. Servirà tutta la vostra concentrazione."
+},
+{
+"id": "gig2",
+"pista": "gig_b",
+"codice": "GIG",
+"nome": "Galeão",
+"colore": "rosso",
+"moduli": [
+"vento",
+"perdita"
+],
+"abilita": 2,
+"quota": "rossa",
+"fonte": "base",
+"speciale": "",
+"testo": "Arrivate in coda a un raro ciclone tropicale dell'Atlantico del Sud: venti fortissimi e un corridoio aereo stretto. Avete la stoffa per questo atterraggio... ma perché vi sudano le mani?"
+},
+{
+"id": "osl2",
+"pista": "osl_b",
+"codice": "OSL",
+"nome": "Gardermoen",
+"colore": "rosso",
+"moduli": [
+"perdita",
+"ghiaccio"
+],
+"abilita": 2,
+"quota": "rossa",
+"fonte": "base",
+"speciale": "",
+"testo": "La pista è ghiacciata e l'indicatore del cherosene è in riserva da mezz'ora. 150 tra passeggeri ed equipaggio contano su di voi. Non deludeteli."
+},
+{
+"id": "tgu2",
+"pista": "tgu_b",
+"codice": "TGU",
+"nome": "Toncontín",
+"colore": "rosso",
+"moduli": [
+"cherosene",
+"vento"
+],
+"abilita": 2,
+"quota": "rossa",
+"fonte": "base",
+"speciale": "",
+"testo": "Quando costruiranno un nuovo aeroporto a Tegucigalpa? Atterrare qui vi perseguita nei sogni. Scendete a sinistra tra le montagne e fate quello che serve."
+},
+{
+"id": "kef2",
+"pista": "kef_b",
+"codice": "KEF",
+"nome": "Keflavík",
+"colore": "nero",
+"moduli": [
+"vento",
+"ghiaccio"
+],
+"abilita": 2,
+"quota": "rossa",
+"fonte": "base",
+"speciale": "",
+"testo": "Bucate le nuvole e vi trovate in piena bufera di neve. Le luci della pista si intravedono appena. I passeggeri contano su di voi. Concentrazione. Calma. Atterrate."
+},
+{
+"id": "kul2",
+"pista": "kul_b",
+"codice": "KUL",
+"nome": "Kuala Lumpur",
+"colore": "nero",
+"moduli": [
+"cherosene",
+"tempo"
+],
+"abilita": 2,
+"quota": "rossa",
+"fonte": "base",
+"speciale": "",
+"testo": "I fulmini lampeggiano tutt'intorno. Dev'essere così volare all'inferno. Arrivare all'aeroporto richiederà fino all'ultima goccia di concentrazione. Il tempo è contro di voi."
+},
+{
+"id": "pbh2",
+"pista": "pbh_b",
+"codice": "PBH",
+"nome": "Paro",
+"colore": "nero",
+"moduli": [
+"cherosene",
+"tempo"
+],
+"abilita": 2,
+"quota": "rossa",
+"fonte": "base",
+"speciale": "",
+"testo": "Bentornati all'aeroporto più pericoloso del mondo. Almeno il tempo è sereno, ma un pensiero torna sempre: solo 8 piloti al mondo sono abilitati ad atterrare qui. È ora di aggiungere il vostro nome alla lista... oppure no."
+},
+{
+"id": "syd1",
+"pista": "syd_a",
+"codice": "SYD",
+"nome": "Kingsford Smith",
+"colore": "verde",
+"moduli": [
+"allarmi"
+],
+"abilita": 1,
+"quota": "verde",
+"fonte": "turbolenze",
+"speciale": "",
+"testo": "Siete in volo da 14 ore e avete appena completato l'ampia virata a destra per avvicinarvi a Sydney da sud. L'elettronica sembra fare i capricci: mantenete il sangue freddo mentre i sistemi vanno in tilt."
+},
+{
+"id": "pek1",
+"pista": "pek_a",
+"codice": "PEK",
+"nome": "Beijing Capital",
+"colore": "verde",
+"moduli": [],
+"abilita": 1,
+"quota": "A",
+"fonte": "turbolenze",
+"speciale": "",
+"testo": "Avete sorvolato il Mar Giallo e vedete in lontananza i monti Yanshan al confine con la Mongolia. Una spessa coltre di nubi copre la capitale cinese: dovrete affidarvi agli strumenti."
+},
+{
+"id": "cpt1",
+"pista": "cpt_a",
+"codice": "CPT",
+"nome": "Cape Town",
+"colore": "verde",
+"moduli": [
+"cherosene"
+],
+"abilita": 1,
+"quota": "B",
+"fonte": "turbolenze",
+"speciale": "",
+"testo": "Dopo un primo giro sul Capo di Buona Speranza tentate un secondo avvicinamento. Qui gli oceani si incontrano e i venti marini sferzano le montagne: le condizioni di volo sono dure."
+},
+{
+"id": "kbp1",
+"pista": "kbp_a",
+"codice": "KBP",
+"nome": "Boryspil",
+"colore": "giallo",
+"moduli": [],
+"abilita": 2,
+"quota": "verde",
+"fonte": "turbolenze",
+"speciale": "",
+"testo": "BAM! Avete centrato in pieno uno stormo di oche. Mantenete il controllo, ma hanno strappato parte della carenatura e incrinato un pannello: il rumore rende impossibile parlare in cabina."
+},
+{
+"id": "mad1",
+"pista": "mad_a",
+"codice": "MAD",
+"nome": "Madrid-Barajas",
+"colore": "giallo",
+"moduli": [
+"quota5000",
+"stagista"
+],
+"abilita": 1,
+"quota": "verde",
+"fonte": "turbolenze",
+"speciale": "",
+"testo": "Superate la Serra da Estrela e virate a sud su Salamanca. C'è traffico intenso sulla capitale spagnola: scendete lentamente e a 5000 piedi ricevete l'autorizzazione ad atterrare. Bisogna fare in fretta!"
+},
+{
+"id": "waw1",
+"pista": "waw_a",
+"codice": "WAW",
+"nome": "Varsavia Chopin",
+"colore": "giallo",
+"moduli": [
+"allarmi",
+"cherosene"
+],
+"abilita": 1,
+"quota": "verde",
+"fonte": "turbolenze",
+"speciale": "waw",
+"testo": "Avete provato a estrarre il carrello... niente da fare. Dovrete atterrare sulla pancia, ma prima girerete in tondo sopra Varsavia per bruciare il carburante rimasto. Ora è il momento di appoggiarla. Con molta, molta cautela."
+},
+{
+"id": "ter1",
+"pista": "ter_a",
+"codice": "TER",
+"nome": "Lajes, Azzorre",
+"colore": "giallo",
+"moduli": [
+"ghiaccio"
+],
+"abilita": 2,
+"quota": "verde",
+"fonte": "turbolenze",
+"speciale": "ter",
+"testo": "Atterraggio di emergenza. La buona notizia: avete trovato un'isoletta con una pista utilizzabile. La pessima: i motori sono spenti. Scendete veloci; una volta a terra dovrete frenare fortissimo."
+},
+{
+"id": "sxm1",
+"pista": "sxm_a",
+"codice": "SXM",
+"nome": "Princess Juliana",
+"colore": "giallo",
+"moduli": [
+"quota5000",
+"stagista"
+],
+"abilita": 0,
+"quota": "B",
+"fonte": "turbolenze",
+"speciale": "",
+"testo": "Avete promesso al tirocinante un atterraggio interessante e non resterà deluso: è il famoso aeroporto la cui pista inizia al bordo di una spiaggia affollata. Gestite le turbolenze con cura!"
+},
+{
+"id": "dus2a",
+"pista": "dus2_a",
+"codice": "DUS",
+"nome": "Düsseldorf",
+"colore": "giallo",
+"moduli": [
+"perdita"
+],
+"abilita": 2,
+"quota": "A",
+"fonte": "turbolenze",
+"speciale": "",
+"testo": "Arrivate a Düsseldorf con gli ultimi vapori di carburante: c'è una perdita e ci sono temporali su tutta la Renania. La visibilità sarà a sprazzi. Restate concentrati e andrà tutto bene."
+},
+{
+"id": "syd2",
+"pista": "syd_b",
+"codice": "SYD",
+"nome": "Kingsford Smith",
+"colore": "rosso",
+"moduli": [
+"allarmi"
+],
+"abilita": 2,
+"quota": "C",
+"fonte": "turbolenze",
+"speciale": "",
+"testo": "Vi ricorderete a lungo questo volo di 10 ore da Tokyo: turbolenze quasi continue da un temporale all'altro, e Sydney promette lo stesso. Visibilità scarsa, scossoni e l'elettronica che comincia a dare segni di cedimento."
+},
+{
+"id": "pek2",
+"pista": "pek_b",
+"codice": "PEK",
+"nome": "Beijing Capital",
+"colore": "rosso",
+"moduli": [
+"vento"
+],
+"abilita": 1,
+"quota": "C",
+"fonte": "turbolenze",
+"speciale": "",
+"testo": "Un fronte temporalesco si abbatte sull'aeroporto di Pechino, spinto da venti fortissimi. La discesa sarà agitatissima e la visibilità bassa. Molto bassa. Prendete fiato e accendete l'interfono."
+},
+{
+"id": "waw2",
+"pista": "waw_b",
+"codice": "WAW",
+"nome": "Varsavia Chopin",
+"colore": "rosso",
+"moduli": [
+"allarmi",
+"cherosene",
+"vento"
+],
+"abilita": 1,
+"quota": "rossa",
+"fonte": "turbolenze",
+"speciale": "waw",
+"testo": "Il carrello è bloccato: atterraggio sulla pancia in piena burrasca. E mentre iniziate la discesa suona un allarme: il carrello non era l'unico problema. Una goccia di sudore scende sulla fronte. Ora di atterrare."
+},
+{
+"id": "sxm2",
+"pista": "sxm_b",
+"codice": "SXM",
+"nome": "Princess Juliana",
+"colore": "rosso",
+"moduli": [
+"quota5000",
+"cherosene",
+"stagista"
+],
+"abilita": 0,
+"quota": "D",
+"fonte": "turbolenze",
+"speciale": "",
+"testo": "Momento da nocche bianche. Una forte tempesta flagella i Caraibi e questo atterraggio è sempre delicato. Scarsa visibilità prima del contatto e gente in spiaggia (sì, anche con questo tempo!)."
+},
+{
+"id": "dus2b",
+"pista": "dus2_b",
+"codice": "DUS",
+"nome": "Düsseldorf",
+"colore": "rosso",
+"moduli": [
+"perdita",
+"tempo"
+],
+"abilita": 1,
+"quota": "C",
+"fonte": "turbolenze",
+"speciale": "",
+"testo": "Un allarme: il livello del serbatoio di dritta è crollato. Ed è luglio, alta stagione in Renania, con il cielo pieno di aerei. Dovrete manovrare per entrare... ma dovete atterrare. Subito."
+},
+{
+"id": "nzir1",
+"pista": "nzir_a",
+"codice": "NZIR",
+"nome": "Ice Runway",
+"colore": "rosso",
+"moduli": [
+"vento",
+"ghiaccio"
+],
+"abilita": 1,
+"quota": "rossa",
+"fonte": "turbolenze",
+"speciale": "nzir",
+"testo": "Un forte vento contrario dal Polo scuote il carico e i pochi passeggeri a bordo. Benvenuti in Antartide: è la prima volta che vedete la famosa pista di ghiaccio. Un momento... quelli sulla pista sono pinguini?"
+},
+{
+"id": "cpt2",
+"pista": "cpt_b",
+"codice": "CPT",
+"nome": "Cape Town",
+"colore": "nero",
+"moduli": [
+"allarmi",
+"vento",
+"stagista"
+],
+"abilita": 0,
+"quota": "D",
+"fonte": "turbolenze",
+"speciale": "",
+"testo": "Arrivate a Città del Capo da nord, tra la Table Mountain e le montagne di Jonkershoek. Oggi la nebbia regala un soffitto bassissimo, e il tirocinante vi segnala un guasto all'impianto elettrico. Sangue freddo."
+},
+{
+"id": "kbp2",
+"pista": "kbp_b",
+"codice": "KBP",
+"nome": "Boryspil",
+"colore": "nero",
+"moduli": [
+"allarmi"
+],
+"abilita": 2,
+"quota": "rossa",
+"fonte": "turbolenze",
+"speciale": "",
+"testo": "Volate verso Kiev. Sarebbe bellissimo, se non fosse per il rumore: qualcosa si è staccato vicino alla cabina, con un ronzio e un fischio impossibili da sovrastare. Dovrete anche manovrare un bel po'."
+},
+{
+"id": "mad2",
+"pista": "mad_b",
+"codice": "MAD",
+"nome": "Madrid-Barajas",
+"colore": "nero",
+"moduli": [
+"quota5000",
+"cherosene",
+"tempo"
+],
+"abilita": 1,
+"quota": "rossa",
+"fonte": "turbolenze",
+"speciale": "",
+"testo": "Novanta minuti fa la torre di Madrid vi ha messi in attesa per un'emergenza in pista. Ma c'è un'emergenza anche quassù: il carburante scarseggia. Finalmente avete il via. Non c'è tempo da perdere!"
+},
+{
+"id": "ter2",
+"pista": "ter_b",
+"codice": "TER",
+"nome": "Lajes, Azzorre",
+"colore": "nero",
+"moduli": [
+"ghiaccio"
+],
+"abilita": 1,
+"quota": "rossa",
+"fonte": "turbolenze",
+"speciale": "ter",
+"testo": "Dovete fare un atterraggio di emergenza: il carburante è finito e i motori sono spenti. L'unica speranza è una base militare su un'isola sperduta delle Azzorre. Dovrete virare più volte per rallentare."
+},
+{
+"id": "nzir2",
+"pista": "nzir_b",
+"codice": "NZIR",
+"nome": "Ice Runway",
+"colore": "nero",
+"moduli": [
+"cherosene",
+"vento",
+"ghiaccio",
+"stagista"
+],
+"abilita": 0,
+"quota": "rossa",
+"fonte": "turbolenze",
+"speciale": "nzir",
+"testo": "Venti fortissimi spazzano l'arcipelago di Ross e la neve nasconde quasi del tutto la base di McMurdo: servono parecchie correzioni di rotta. La vostra tirocinante è emozionata all'idea di atterrare sul ghiaccio, ma manterrà i nervi saldi?"
+},
+{
+"id": "cdg1",
+"pista": "cdg_a",
+"codice": "CDG",
+"nome": "Parigi-Charles de Gaulle",
+"colore": "giallo",
+"moduli": [
+"vento",
+"stagista"
+],
+"abilita": 0,
+"quota": "verde",
+"fonte": "promo",
+"speciale": "",
+"testo": "Benvenuti a bordo! Venti potenti spazzano la capitale francese e il traffico aereo è intensissimo. Un bel battesimo del fuoco per il Tirocinante che vola con voi oggi. Siete all'altezza?"
+},
+{
+"id": "cdg2",
+"pista": "cdg_b",
+"codice": "CDG",
+"nome": "Parigi-Charles de Gaulle",
+"colore": "rosso",
+"moduli": [
+"cherosene",
+"vento",
+"stagista"
+],
+"abilita": 0,
+"quota": "rossa",
+"fonte": "promo",
+"speciale": "",
+"testo": "Parigi, di notte, con il vento che spinge forte e il carburante contato. Il Tirocinante vi guarda: è il momento di mostrargli come si fa."
+},
+{
+"id": "dus1",
+"pista": "dus_a",
+"codice": "DUS",
+"nome": "Düsseldorf",
+"colore": "giallo",
+"moduli": [
+"perdita"
+],
+"abilita": 2,
+"quota": "verde",
+"fonte": "promo",
+"speciale": "",
+"testo": "Un guasto informatico paralizza l'aeroporto di Amsterdam e alcuni voli, compreso il vostro, sono dirottati su Düsseldorf. È inizio ottobre e il cielo è già pieno. Che cosa starà succedendo...?"
+},
+{
+"id": "dus3",
+"pista": "dus_b",
+"codice": "DUS",
+"nome": "Düsseldorf",
+"colore": "nero",
+"moduli": [
+"tempo",
+"perdita"
+],
+"abilita": 1,
+"quota": "rossa",
+"fonte": "promo",
+"speciale": "",
+"testo": "Dirottati su Düsseldorf con una perdita di carburante e il cielo pieno di aerei: ogni secondo conta."
+},
+{
+"id": "lga1",
+"pista": "lga_a",
+"codice": "LGA",
+"nome": "LaGuardia",
+"colore": "giallo",
+"moduli": [
+"ghiaccio"
+],
+"abilita": 2,
+"quota": "verde",
+"fonte": "promo",
+"speciale": "",
+"testo": "Un fronte freddo stringe la costa orientale nella sua morsa. Le condizioni sono tutt'altro che ideali e la pista è ghiacciata. Brooklyn e Manhattan sono pilastri di brina scintillanti. Tocca a voi."
+},
+{
+"id": "lga2",
+"pista": "lga_b",
+"codice": "LGA",
+"nome": "LaGuardia",
+"colore": "nero",
+"moduli": [
+"cherosene",
+"ghiaccio"
+],
+"abilita": 1,
+"quota": "rossa",
+"fonte": "promo",
+"speciale": "",
+"testo": "New York sotto il gelo, la pista ghiacciata e il carburante agli sgoccioli. Niente margini d'errore."
+},
+{
+"id": "ter3",
+"pista": "tera_a",
+"codice": "TER",
+"nome": "Lajes, Açores",
+"colore": "giallo",
+"moduli": [
+"ghiaccio"
+],
+"abilita": 2,
+"quota": "verde",
+"fonte": "promo",
+"speciale": "ter",
+"testo": "24 agosto 2001, 6:26. Volo TS-236, Atlantico orientale, 306 persone a bordo. Il nostro A330 ha finito il cherosene: entrambi i motori sono spenti. Unica speranza: planare fino alla base militare di Lajes, alle Azzorre."
+},
+{
+"id": "ter4",
+"pista": "tera_b",
+"codice": "TER",
+"nome": "Lajes, Açores",
+"colore": "nero",
+"moduli": [
+"ghiaccio"
+],
+"abilita": 1,
+"quota": "rossa",
+"fonte": "promo",
+"speciale": "ter",
+"testo": "Arriviamo troppo veloci e troppo alti. Dopo un giro di 360° dovremo fare alcune virate per rallentare. Dovremo fare l'impossibile..."
+},
+{
+"id": "blq1",
+"pista": "blq_a",
+"codice": "BLQ",
+"nome": "Guglielmo Marconi",
+"colore": "verde",
+"moduli": [
+"perdita"
+],
+"abilita": 0,
+"quota": "verde",
+"fonte": "promo",
+"speciale": "",
+"testo": "Vi lasciate alle spalle le Dolomiti e il lago di Garda e scendete verso l'Emilia-Romagna. Bologna compare all'orizzonte. Il cielo è sgombro: restate nel vostro corridoio di avvicinamento."
+},
+{
+"id": "blq2",
+"pista": "blq_b",
+"codice": "BLQ",
+"nome": "Guglielmo Marconi",
+"colore": "rosso",
+"moduli": [
+"cherosene"
+],
+"abilita": 1,
+"quota": "rossa",
+"fonte": "promo",
+"speciale": "",
+"testo": "Bologna vi aspetta, ma il carburante è contato e il traffico non perdona. Ogni dado sprecato pesa."
+},
+{
+"id": "bud1",
+"pista": "bud_a",
+"codice": "BUD",
+"nome": "Budapest Liszt Ferenc",
+"colore": "giallo",
+"moduli": [
+"vento"
+],
+"abilita": 0,
+"quota": "verde",
+"fonte": "promo",
+"speciale": "",
+"testo": "Sorvolate l'immenso lago Balaton puntando sulla capitale ungherese da sud-ovest. Il vento vi spinge forte alle spalle: controllate l'avvicinamento e allineatevi con la pista."
+},
+{
+"id": "bud2",
+"pista": "bud_b",
+"codice": "BUD",
+"nome": "Budapest Liszt Ferenc",
+"colore": "rosso",
+"moduli": [
+"vento",
+"quota5000"
+],
+"abilita": 2,
+"quota": "rossa",
+"fonte": "promo",
+"speciale": "",
+"testo": "Il vento vi spinge forte alle spalle e la torre vi fa partire già a 5000 piedi, senza gettone Rilancio. Controllate l'avvicinamento e allineatevi con la pista."
+}
+]
