@@ -152,9 +152,11 @@ static func valuta(s: Dictionary, c: int) -> float:
 		var n: int = s["aerei"][i]
 		if n > 0:
 			var d := i - int(s["pos"])
-			var pena: float = 150.0 + 500.0 / giri_t + max(0.0, 260.0 - 80.0 * d)
-			if d <= 1 and not motori_fatti and not fine:
-				pena += 500.0
+			var pena: float = 150.0 + 500.0 / giri_t + max(0.0, 300.0 - 100.0 * d)
+			if d == 0 and not fine:
+				pena += 700.0 if not motori_fatti else 450.0
+			elif d == 1 and not fine:
+				pena += 300.0 if not motori_fatti else 150.0
 			p -= n * pena
 	# --- carrello, flap, freni
 	var giri_rimasti: int = Motore.ULTIMA_QUOTA - int(s["quota"]) + 1

@@ -27,9 +27,7 @@ static var _font := {}
 
 static func font(nome: String) -> Font:
 	if not _font.has(nome):
-		var f := FontFile.new()
-		f.data = FileAccess.get_file_as_bytes("res://assets/font/%s.ttf" % nome)
-		_font[nome] = f
+		_font[nome] = load("res://assets/font/%s.ttf" % nome)
 	return _font[nome]
 
 static func titolo() -> Font:
