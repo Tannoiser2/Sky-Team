@@ -318,8 +318,10 @@ static func inizia_round(s: Dictionary) -> void:
 	var c := casella(s, s["pos"])
 	# dado Traffico
 	var t: int = int(c.get("t", 0))
+	s["traffico_tirato"] = {"casella": int(s["pos"]), "dadi": []}
 	for k in t:
 		var d := dado(s)
+		s["traffico_tirato"]["dadi"].append(d)
 		var dest: int = mini(int(s["pos"]) + d - 1, int(s["ultima"]))
 		var limite := MAX_PINGUINI if s["pinguini"] else MAX_AEREI
 		if aerei_totali(s) < limite:

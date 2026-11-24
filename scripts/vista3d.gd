@@ -390,6 +390,7 @@ func _costruisci_rotta() -> void:
 		_traguardo(i, cas[i])
 	_terreno_e_pista(nodi_casella[-1], h)
 	_nuvole()
+	_zone_meteo()
 
 func _nastro(dove: Node3D, pts: Array, banca: float) -> void:
 	var st := SurfaceTool.new()
@@ -460,7 +461,20 @@ func _traguardo(i: int, c: Dictionary) -> void:
 	var testi := []
 	var t := int(c.get("t", 0))
 	if t > 0:
-		testi.append("traffico +%d" % t if t > 1 else "traffico")
+		# dadi neri del traffico sotto il traguardo: da tirare, o il risultato appena uscito
+		var tirati: Array = []
+		var tt: Dictionary = s.get("traffico_tirato", {})
+		if int(tt.get("casella", -1)) == i:
+			tirati = tt.get("dadi", [])
+		for k in t:
+			var faccia: int = int(tirati[k]) if k < tirati.size() else 0
+			var dd := Sprite3D.new()
+			dd.texture = Stile.tex("res://assets/img/dado_nero_%d.webp" % faccia)
+			dd.pixel_size = 0.0055
+			dd.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+			dd.shaded = false
+			dd.position = Vector3((k - (t - 1) * 0.5) * 0.66, -0.48, 0)
+			n.add_child(dd)
 	if int(c.get("a", 0)) > 0:
 		testi.append("allarme")
 	if int(c.get("m", 0)) == 1:
@@ -469,7 +483,7 @@ func _traguardo(i: int, c: Dictionary) -> void:
 		testi.append(Motore.scenario(s["scenario"]).get("codice", ""))
 	if not testi.is_empty():
 		var l := _etichetta("  ".join(testi), 64, Color("ffd36b") if i < ultima else Color.WHITE)
-		l.position = Vector3(0, -0.38, 0)
+		l.position = Vector3(0, -0.38 if t == 0 else -0.98, 0)
 		l.name = "Info"
 		n.add_child(l)
 
@@ -486,6 +500,74 @@ func _mat_nuvola(n: int) -> StandardMaterial3D:
 	m.distance_fade_mode = BaseMaterial3D.DISTANCE_FADE_PIXEL_ALPHA
 	m.cull_mode = BaseMaterial3D.CULL_DISABLED
 	mat_nuvole.append(m)
+	return m
+
+## Zone di turbolenza e di scarsa visibilità (espansione Turbolenze): ogni quota futura con l'effetto
+## avvolge il tratto di rotta che le corrisponde in nuvole scure (turbolenza) o chiare (nebbia), con una scritta
+func _zone_meteo() -> void:
+	var q: Array = Motore.QUOTE[s["quota_tipo"]]
+	var quota := int(s["quota"])
+	var tutti: Array = []
+	for i in range(int(s["pos"]), punti.size()):
+		tutti.append_array(punti[i])
+	for liv in range(quota, 7):
+		var eff: String = q[liv]
+		var tipi: Array = []
+		if "t" in eff:
+			tipi.append("t")
+		if "n" in eff:
+			tipi.append("n")
+		if tipi.is_empty():
+			continue
+		var y_alto := HMAX * (6 - liv) / 6.0 + 0.01
+		var y_basso := HMAX * (6 - liv - 1) / 6.0
+		if liv >= 6:
+			y_alto = HMAX / 12.0
+			y_basso = -1.0
+		var dentro: Array = []
+		for p in tutti:
+			if p.y <= y_alto and p.y > y_basso:
+				dentro.append(p)
+		if dentro.is_empty():
+			continue
+		var rng := RandomNumberGenerator.new()
+		rng.seed = hash(s["pista"]) + liv * 17
+		var nomi: Array = []
+		if "t" in tipi:
+			nomi.append("TURBOLENZA")
+		if "n" in tipi:
+			nomi.append("SCARSA VISIBILITÀ")
+		var l := _etichetta(" + ".join(nomi), 50, Color("dcc2ff") if "t" in tipi else Color("e8f1fa"))
+		l.position = (dentro[0] as Vector3) + Vector3(0, 2.1, 0)
+		nodo_rotta.add_child(l)
+		for ti in tipi.size():
+			var tipo: String = tipi[ti]
+			var passo := maxi(2, dentro.size() / 4)
+			for k in range(0, dentro.size(), passo):
+				var p: Vector3 = dentro[k]
+				for lato in [-1.0, 1.0]:
+					var mi := MeshInstance3D.new()
+					var qm := QuadMesh.new()
+					var dim := rng.randf_range(1.1, 1.7)
+					qm.size = Vector2(dim, dim * 0.6)
+					mi.mesh = qm
+					mi.material_override = _mat_meteo(tipo)
+					mi.position = p + Vector3(lato * rng.randf_range(1.1, 1.6), rng.randf_range(0.1, 0.7) + ti * 0.3, rng.randf_range(-0.5, 0.5))
+					nodo_rotta.add_child(mi)
+
+
+func _mat_meteo(tipo: String) -> StandardMaterial3D:
+	var k := "meteo_" + tipo
+	if mat_cache.has(k):
+		return mat_cache[k]
+	var m := StandardMaterial3D.new()
+	m.albedo_texture = Stile.tex("res://assets/img/nuvola%d.webp" % (1 if tipo == "t" else 2))
+	m.albedo_color = Color(0.42, 0.36, 0.55, 0.5) if tipo == "t" else Color(0.95, 0.97, 1.0, 0.45)
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	m.cull_mode = BaseMaterial3D.CULL_DISABLED
+	mat_cache[k] = m
 	return m
 
 ## Nuvole sparse intorno alla rotta, lontane dal corridoio di volo
@@ -674,7 +756,7 @@ func _traffico() -> void:
 		var h: float = rotte_ang[i]
 		var lat := _dir(h).cross(Vector3.UP).normalized()
 		for j in n:
-			var off: float = (j - (n - 1) * 0.5) * 0.6
+			var off: float = (j - (n - 1) * 0.5) * 1.15
 			var p := base + lat * off + Vector3(0, 0.25, 0)
 			if s["pinguini"]:
 				var sp := Sprite3D.new()
@@ -686,10 +768,11 @@ func _traffico() -> void:
 			else:
 				var mi := MeshInstance3D.new()
 				mi.mesh = mesh
-				mi.material_override = _mat(Color("8d96a3"))
-				mi.scale = Vector3.ONE * 0.12
+				# aerei del traffico: rossi e grandi, con il muso verso di noi (vengono in senso contrario)
+				mi.material_override = _mat(Color("d8452b"))
+				mi.scale = Vector3.ONE * 0.2
 				mi.position = p
-				mi.rotation.y = -h
+				mi.rotation.y = -h + PI
 				nodo_traffico.add_child(mi)
 
 func _indicatori() -> void:
