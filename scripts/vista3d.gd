@@ -4,12 +4,13 @@ extends SubViewportContainer
 ## sotto la rotta che scende fino alla pista. La rotta piega a destra o a sinistra dove c'è una virata
 ## e lì mostra un arco con le inclinazioni permesse (verdi) e vietate (rosse).
 ## Sul traguardo di ogni casella ci sono gli aerei del traffico (o i pinguini).
-## Sotto l'aereo c'è un basamento con gli indicatori: caffè, carrello, flap, freni, rilanci, cherosene.
+## Gli indicatori sono sull'aereo: il carrello esce gamba per gamba, i flap si colorano di rosso uno alla volta,
+## i freni accendono luci rosse sulla deriva. Caffè, rilanci e cherosene restano sulla plancia.
 ## Comandi: mouse (sinistro ruota, destro sposta, rotella zoom) e tocco (un dito sposta, due dita pizzicano e ruotano).
 
 const D := 4.6              # distanza tra due caselle
 const HMAX := 5.5          # altezza a 6000 piedi
-const SCALA_AEREO := 0.5
+const SCALA_AEREO := 0.75
 const METRI_UNITA := 500.0   # metri veri per unità della scena
 const GRADI_VIRATA := 40.0   # gradi di curva per ogni tacca di inclinazione richiesta
 
@@ -18,6 +19,7 @@ var mondo: Node3D
 var cam: Camera3D
 var aereo: Node3D
 var flap_nodi: Array = []
+var luci_freni: Array = []
 var ruote: Array = []
 var basamento: Node3D
 var nodo_rotta: Node3D
@@ -82,6 +84,7 @@ func _init() -> void:
 	mondo.add_child(nodo_traffico)
 	_crea_aereo()
 	_crea_basamento()
+	basamento.visible = false   # gli indicatori ora sono sull'aereo stesso
 	filo = MeshInstance3D.new()
 	mondo.add_child(filo)
 
@@ -204,24 +207,30 @@ func _crea_aereo() -> void:
 		for lato in [-1.0, 1.0]:
 			var perno := Node3D.new()
 			perno.position = Vector3(lato * flap_dati[k][0], -0.215, flap_dati[k][1] + 0.17)
-			var b := _box(Vector3(0.09, 0.07, 0.34), Color("c9d0d8"))
+			var b := _box(Vector3(0.16, 0.06, 0.34), Color("c9d0d8"))
 			b.position = Vector3(0, 0, -0.17)
 			perno.add_child(b)
 			corpo.add_child(perno)
 			coppia.append(perno)
 		flap_nodi.append(coppia)
+	# freni: tre luci rosse lungo il bordo della deriva (ice brakes compresi)
+	for k in 3:
+		var lu := _sfera(0.085, Color("4a1512"))
+		lu.position = Vector3(0, 0.35 + k * 0.25, -3.12 + k * 0.05)
+		corpo.add_child(lu)
+		luci_freni.append(lu)
 	# carrello: anteriore, sinistro, destro (nasce dentro e scende quando è estratto)
 	var posti := [Vector3(0, -0.55, 2.3), Vector3(-0.42, -0.55, -0.15), Vector3(0.42, -0.55, -0.15)]
 	for k in 3:
 		var g := Node3D.new()
 		g.position = posti[k]
-		var gamba := _box(Vector3(0.05, 0.38, 0.05), Color("7c838c"))
-		gamba.position = Vector3(0, -0.19, 0)
+		var gamba := _box(Vector3(0.07, 0.5, 0.07), Color("9aa1aa"))
+		gamba.position = Vector3(0, -0.25, 0)
 		g.add_child(gamba)
 		for dx in ([-0.07, 0.07] if k == 0 else [-0.09, 0.09]):
-			var r := _cilindro(0.09, 0.07, Color("1d1f22"))
+			var r := _cilindro(0.14, 0.1, Color("1d1f22"))
 			r.rotation_degrees.z = 90
-			r.position = Vector3(dx, -0.4, 0)
+			r.position = Vector3(dx * 1.4, -0.52, 0)
 			g.add_child(r)
 		g.scale = Vector3(1, 0.01, 1)
 		g.visible = false
@@ -702,6 +711,13 @@ func _indicatori() -> void:
 		barra_kero.material_override = _mat(Color("49d17c").lerp(Stile.ROSSO, clampf(1.0 - v / 14.0, 0, 1)))
 		et_kero.text = "CHEROSENE %d" % v
 		et_kero.position = Vector3(1.05, 0.78, -0.35)
+	# sull'aereo: flap rossi quando sono estesi, luci rosse dei freni sulla deriva
+	for k in 4:
+		for perno in flap_nodi[k]:
+			(perno.get_child(0) as MeshInstance3D).material_override = _mat(Stile.ROSSO if s["flap"][k] else Color("c9d0d8"))
+	for k in 3:
+		var acceso: bool = s["freni"][k] if not Motore.ha(s, "ghiaccio") else k < int(s["ghiaccio"])
+		luci_freni[k].material_override = _mat(Color("ff2a1f") if acceso else Color("4a1512"), acceso)
 	var nomi_q := ["6000 piedi", "5000 piedi", "4000 piedi", "3000 piedi", "2000 piedi", "1000 piedi", "atterraggio"]
 	et_quota.text = nomi_q[clampi(s["quota"], 0, 6)]
 
@@ -816,9 +832,6 @@ func _inquadra(pa: Vector3, dir: Vector3) -> Array:
 	pts.append(pa + dx * 1.6)
 	pts.append(pa - dx * 1.6)
 	pts.append(pa - _dir(rotte_ang[0]) * 1.8)
-	pts.append(basamento.position + Vector3(0, -0.5, 0) + dx * 1.45)
-	pts.append(basamento.position + Vector3(0, -0.5, 0) - dx * 1.45)
-	pts.append(basamento.position + Vector3(0, 0.9, 0))
 	for i in range(int(s["pos"]), nodi_casella.size()):
 		var lat := _dir(rotte_ang[i]).cross(Vector3.UP).normalized()
 		pts.append(nodi_casella[i] + lat * 1.4 + Vector3(0, 0.8, 0))
