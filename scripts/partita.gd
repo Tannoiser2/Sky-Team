@@ -15,6 +15,12 @@ var nome_altro := ""
 var tavolo: Tavolo
 var comandi_vista: HBoxContainer
 var colonna: VBoxContainer
+var b_testa: VBoxContainer
+var b_gioco: VBoxContainer
+var b_diario: VBoxContainer
+var lato: VBoxContainer
+var doppia: HBoxContainer
+var largo_attuale := -1
 var l_titolo: Label
 var l_info: Label
 var l_turno: Label
@@ -74,17 +80,29 @@ func _costruisci() -> void:
 	pc.add_child(sc)
 	colonna = VBoxContainer.new()
 	colonna.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	colonna.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	colonna.add_theme_constant_override("separation", 10)
 	sc.add_child(colonna)
+	# tre blocchi: intestazione, gioco (dadi e azioni), diario; su uno spazio largo stanno in due colonne
+	b_testa = _blocco()
+	b_gioco = _blocco()
+	b_diario = _blocco()
+	b_diario.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	doppia = HBoxContainer.new()
+	doppia.add_theme_constant_override("separation", 24)
+	doppia.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	lato = _blocco()
+	lato.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_ordina_colonna(false)
 	l_titolo = Stile.etichetta("", 34, Stile.TESTO, Stile.titolo())
 	l_titolo.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	colonna.add_child(l_titolo)
+	b_testa.add_child(l_titolo)
 	l_info = Stile.paragrafo("", 22, Stile.TESTO_DEBOLE)
-	colonna.add_child(l_info)
+	b_testa.add_child(l_info)
 	carte_abilita = HFlowContainer.new()
 	carte_abilita.add_theme_constant_override("h_separation", 6)
 	carte_abilita.add_theme_constant_override("v_separation", 6)
-	colonna.add_child(carte_abilita)
+	b_testa.add_child(carte_abilita)
 	for a in s["abilita"]:
 		var tr := TextureRect.new()
 		tr.texture = Stile.tex("res://assets/img/abilita/%s.webp" % a)
@@ -95,53 +113,53 @@ func _costruisci() -> void:
 		carte_abilita.add_child(tr)
 	l_tempo = Stile.etichetta("", 40, Stile.GIALLO, Stile.cifre())
 	l_tempo.visible = false
-	colonna.add_child(l_tempo)
+	b_gioco.add_child(l_tempo)
 	l_turno = Stile.paragrafo("", 28, Stile.GIALLO)
 	l_turno.add_theme_font_override("font", Stile.grassetto())
-	colonna.add_child(l_turno)
-	colonna.add_child(Stile.etichetta("I TUOI DADI (%s)" % Motore.nome_ruolo(io).to_upper(), 22, Stile.BLU.lightened(0.4) if io == 0 else Stile.ARANCIO.lightened(0.2), Stile.grassetto()))
+	b_gioco.add_child(l_turno)
+	b_gioco.add_child(Stile.etichetta("I TUOI DADI (%s)" % Motore.nome_ruolo(io).to_upper(), 22, Stile.BLU.lightened(0.4) if io == 0 else Stile.ARANCIO.lightened(0.2), Stile.grassetto()))
 	mano = Mano.new()
 	mano.colore = io
 	mano.custom_minimum_size = Vector2(300, 112)
 	mano.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	mano.toccato.connect(_dado)
-	colonna.add_child(mano)
+	b_gioco.add_child(mano)
 	riga_caffe = HBoxContainer.new()
 	riga_caffe.add_theme_constant_override("separation", 8)
-	colonna.add_child(riga_caffe)
+	b_gioco.add_child(riga_caffe)
 	riga_azioni = HFlowContainer.new()
 	riga_azioni.add_theme_constant_override("h_separation", 8)
 	riga_azioni.add_theme_constant_override("v_separation", 8)
-	colonna.add_child(riga_azioni)
+	b_gioco.add_child(riga_azioni)
 	l_aiuto = Stile.paragrafo("", 22, Stile.TESTO)
-	colonna.add_child(l_aiuto)
+	b_gioco.add_child(l_aiuto)
 	l_altro = Stile.etichetta("", 22, Stile.TESTO_DEBOLE, Stile.grassetto())
-	colonna.add_child(l_altro)
+	b_gioco.add_child(l_altro)
 	dadi_altro = Mano.new()
 	dadi_altro.colore = 1 - io
 	dadi_altro.coperti = true
 	dadi_altro.custom_minimum_size = Vector2(300, 64)
 	dadi_altro.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	colonna.add_child(dadi_altro)
+	b_gioco.add_child(dadi_altro)
 	carta_automa = TextureRect.new()
 	carta_automa.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	carta_automa.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	carta_automa.custom_minimum_size = Vector2(160, 226)
 	carta_automa.visible = false
-	colonna.add_child(carta_automa)
-	colonna.add_child(Stile.etichetta("DIARIO DI BORDO", 20, Stile.TESTO_DEBOLE, Stile.grassetto()))
+	b_gioco.add_child(carta_automa)
+	b_diario.add_child(Stile.etichetta("DIARIO DI BORDO", 20, Stile.TESTO_DEBOLE, Stile.grassetto()))
 	scorri_reg = ScrollContainer.new()
 	scorri_reg.custom_minimum_size = Vector2(260, 220)
 	scorri_reg.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scorri_reg.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	colonna.add_child(scorri_reg)
+	b_diario.add_child(scorri_reg)
 	registro = VBoxContainer.new()
 	registro.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scorri_reg.add_child(registro)
 	var basso := HFlowContainer.new()
 	basso.add_theme_constant_override("h_separation", 8)
 	basso.add_theme_constant_override("v_separation", 8)
-	colonna.add_child(basso)
+	b_diario.add_child(basso)
 	var b1 := Stile.bottone("Menu", 22)
 	b1.pressed.connect(func(): esci.emit())
 	basso.add_child(b1)
@@ -175,25 +193,62 @@ func _costruisci() -> void:
 	resized.connect(_disponi)
 	_disponi.call_deferred()
 
+func _blocco() -> VBoxContainer:
+	var v := VBoxContainer.new()
+	v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	v.add_theme_constant_override("separation", 10)
+	return v
+
+## Una colonna sola (intestazione, gioco, diario) oppure due affiancate (gioco | intestazione e diario)
+func _ordina_colonna(largo: bool) -> void:
+	if int(largo) == largo_attuale:
+		return
+	largo_attuale = int(largo)
+	for n in [b_testa, b_gioco, b_diario, doppia, lato]:
+		if n.get_parent():
+			n.get_parent().remove_child(n)
+	if largo:
+		colonna.add_child(doppia)
+		doppia.add_child(b_gioco)
+		doppia.add_child(lato)
+		lato.add_child(b_testa)
+		lato.add_child(b_diario)
+	else:
+		colonna.add_child(b_testa)
+		colonna.add_child(b_gioco)
+		colonna.add_child(b_diario)
+
 func _disponi() -> void:
 	if tavolo == null:
 		return
 	var W := size.x
 	var H := size.y
-	var largo_col := clampf(W * (0.24 if tavolo.tre_d else 0.3), 360.0, 560.0)
-	tavolo.position = Vector2.ZERO
-	tavolo.size = Vector2(W - largo_col, H)
-	tavolo._disponi()
-	var x := minf(tavolo.larghezza_usata(), W - largo_col)
+	var pc: Control = get_node("Colonna")
+	if tavolo.tre_d:
+		# 3D in alto su tutta la larghezza, sotto la plancia a sinistra e le indicazioni a destra
+		tavolo.position = Vector2.ZERO
+		tavolo.size = Vector2(W, H)
+		tavolo._disponi()
+		var x0 := tavolo.larghezza_usata()
+		var y0 := tavolo.r_3d.end.y + 8
+		pc.position = Vector2(x0, y0)
+		pc.size = Vector2(W - x0 - 8, H - y0 - 8)
+		_ordina_colonna(pc.size.x > 640)
+	else:
+		var largo_col := clampf(W * 0.3, 380.0, 560.0)
+		tavolo.position = Vector2.ZERO
+		tavolo.size = Vector2(W - largo_col, H)
+		tavolo._disponi()
+		var x := minf(tavolo.larghezza_usata(), W - largo_col)
+		pc.position = Vector2(x, 8)
+		pc.size = Vector2(W - x - 8, H - 16)
+		_ordina_colonna(false)
 	if comandi_vista:
 		var r: Rect2 = tavolo.r_3d if tavolo.tre_d else tavolo.r_pista
 		comandi_vista.position = tavolo.position + r.position + Vector2(10, 10)
 		if not tavolo.tre_d and r.end.y + 66 < tavolo.size.y:
 			comandi_vista.position = tavolo.position + Vector2(r.position.x, r.end.y + 10)
 		comandi_vista.size = comandi_vista.get_combined_minimum_size()
-	var pc: Control = get_node("Colonna")
-	pc.position = Vector2(x, 8)
-	pc.size = Vector2(W - x - 8, H - 16)
 	if finale:
 		finale.position = (size - finale.size) * 0.5
 

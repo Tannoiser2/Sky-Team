@@ -100,15 +100,12 @@ func _disponi() -> void:
 	var ar := PW / PH
 	var am := 0.2 if _ha_moduli() else 0.0
 	if tre_d:
-		# vista 3D a sinistra, poi plancia e moduli; la 3D tiene almeno il 38% dello spazio
-		var serve3 := alt * (ar + am) + 4 * m
-		if serve3 > W * 0.62:
-			alt = (W * 0.62 - 4 * m) / (ar + am)
-		var larg3 := W - alt * (ar + am) - 4 * m
-		r_3d = Rect2(m, m, larg3, H - 2 * m)
-		r_pannello = Rect2(r_3d.end.x + m, m, alt * ar, alt)
-		r_quota = Rect2(r_pannello.end.x, m, 0, 0)
-		r_moduli = Rect2(r_pannello.end.x + m, m, alt * am, alt)
+		# vista 3D in alto su tutta la larghezza; sotto, a sinistra, plancia e moduli
+		r_3d = Rect2(m, m, W - 2 * m, roundf(H * 0.37))
+		alt = H - r_3d.end.y - 2 * m
+		r_pannello = Rect2(m, r_3d.end.y + m, alt * ar, alt)
+		r_quota = Rect2(r_pannello.end.x, r_pannello.position.y, 0, 0)
+		r_moduli = Rect2(r_pannello.end.x + m, r_pannello.position.y, alt * am, alt)
 		r_pista = Rect2()
 		if vista:
 			vista.position = r_3d.position

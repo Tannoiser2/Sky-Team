@@ -7,8 +7,8 @@ extends SubViewportContainer
 ## Sotto l'aereo c'è un basamento con gli indicatori: caffè, carrello, flap, freni, rilanci, cherosene.
 ## Comandi: mouse (sinistro ruota, destro sposta, rotella zoom) e tocco (un dito sposta, due dita pizzicano e ruotano).
 
-const D := 3.0              # distanza tra due caselle
-const HMAX := 8.0          # altezza a 6000 piedi
+const D := 4.6              # distanza tra due caselle
+const HMAX := 5.5          # altezza a 6000 piedi
 const SCALA_AEREO := 0.5
 const GRADI_VIRATA := 28.0   # gradi di curva per ogni tacca di inclinazione richiesta
 
@@ -44,6 +44,7 @@ var pitch := -0.16
 var zoom := 1.0
 var h_cam := 0.0
 var dist_fit := 0.0
+var gia_visibile := -1
 var bersaglio := Vector3.ZERO
 var spost := Vector3.ZERO
 var tocchi := {}
@@ -526,9 +527,7 @@ func imposta(stato: Dictionary) -> void:
 		var tr := nodo_rotta.get_node_or_null("Traguardo%d" % i)
 		if tr:
 			tr.visible = i >= int(s["pos"])
-		var sg := nodo_rotta.get_node_or_null("Segmento%d" % i)
-		if sg:
-			sg.visible = i >= int(s["pos"])
+		gia_visibile = -1
 		var info := nodo_rotta.get_node_or_null("Traguardo%d/Info" % i)
 		if info:
 			info.visible = i != int(s["pos"]) or i == ultima
@@ -622,6 +621,14 @@ func _process(dt: float) -> void:
 	if s.is_empty() or not is_visible_in_tree():
 		return
 	t_attuale = move_toward(t_attuale, t_meta, dt * 1.4)
+	# il tratto che l'aereo sta ancora percorrendo resta visibile finché non lo ha finito
+	var da := mini(int(floor(t_attuale)), int(s["pos"]))
+	if da != gia_visibile:
+		gia_visibile = da
+		for i in nodi_casella.size():
+			var sg := nodo_rotta.get_node_or_null("Segmento%d" % i)
+			if sg:
+				sg.visible = i >= da
 	quota_vis = move_toward(quota_vis, float(s["quota"]), dt * 0.8)
 	var a: int = s["asse"]
 	rollio = lerp(rollio, deg_to_rad(a * 13.0), clampf(dt * 3.0, 0, 1))
@@ -647,7 +654,8 @@ func _process(dt: float) -> void:
 		g.scale.y = move_toward(g.scale.y, 1.0 if giu else 0.01, dt * 1.5)
 		g.visible = g.scale.y > 0.05
 	# basamento sotto l'aereo
-	basamento.position = pa - Vector3(0, 1.3, 0) - _dir(h).cross(Vector3.UP).normalized() * 3.0
+	var di_lato := size.x > size.y * 1.3
+	basamento.position = pa - Vector3(0, 1.3, 0) - (_dir(h) * 4.6 if di_lato else _dir(h).cross(Vector3.UP).normalized() * 3.0)
 	var vc := cam.global_position - basamento.position
 	basamento.rotation = Vector3(0, atan2(vc.x, vc.z), 0)
 	basamento.rotate_object_local(Vector3.RIGHT, deg_to_rad(30))
@@ -661,13 +669,16 @@ func _process(dt: float) -> void:
 	var hv := atan2(verso.x, -verso.z) if verso.length() > 1.0 else h
 	if segue:
 		# sempre alle spalle dell'aereo: destra e sinistra dello schermo sono quelle del pilota
-		var hm := lerp_angle(h, hv, 0.35)
+		var largo := size.x > size.y * 1.3
+		var hm := hv if largo else lerp_angle(h, hv, 0.35)
 		h_cam = hm if dist_fit <= 0.0 else lerp_angle(h_cam, hm, clampf(dt * 1.5, 0, 1))
 	# su schermi stretti si guarda più da dietro, così la discesa resta verticale
 	var asp := size.x / maxf(1.0, size.y)
 	var k := clampf((asp - 0.4) / 0.35, 0.0, 1.0)
-	var ya := yaw + lerpf(0.18, 0.3, k)
-	var pi_ := clampf(pitch - lerpf(0.06, 0.0, k), -1.45, 0.25)
+	# vista larga (in alto su tutto lo schermo): si guarda di fianco, la rotta corre da sinistra a destra
+	var kl := clampf((asp - 0.9) / 1.4, 0.0, 1.0)
+	var ya := yaw + lerpf(lerpf(0.18, 0.3, k), 1.45, kl)
+	var pi_ := clampf(pitch - lerpf(0.06, 0.0, k) - 0.3 * kl, -1.45, 0.25)
 	var dir := Vector3(-sin(h_cam - ya) * cos(pi_), -sin(pi_), cos(h_cam - ya) * cos(pi_))
 	var fit := _inquadra(pa, dir)
 	if segue:
