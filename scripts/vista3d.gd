@@ -7,10 +7,10 @@ extends SubViewportContainer
 ## Sotto l'aereo c'è un basamento con gli indicatori: caffè, carrello, flap, freni, rilanci, cherosene.
 ## Comandi: mouse (sinistro ruota, destro sposta, rotella zoom) e tocco (un dito sposta, due dita pizzicano e ruotano).
 
-const D := 1.5              # distanza tra due caselle
-const HMAX := 11.0          # altezza a 6000 piedi
+const D := 3.0              # distanza tra due caselle
+const HMAX := 8.0          # altezza a 6000 piedi
 const SCALA_AEREO := 0.5
-const GRADI_VIRATA := 16.0
+const GRADI_VIRATA := 28.0   # gradi di curva per ogni tacca di inclinazione richiesta
 
 var vp: SubViewport
 var mondo: Node3D
@@ -40,7 +40,7 @@ var scossa := 0.0
 
 # telecamera
 var yaw := 0.0
-var pitch := -0.2
+var pitch := -0.16
 var zoom := 1.0
 var h_cam := 0.0
 var dist_fit := 0.0
@@ -343,7 +343,11 @@ func _costruisci_rotta() -> void:
 	rotte_ang.append(0.0)
 	for i in ultima:
 		var vi := _virata(cas[i].get("v", ""))
-		var h2: float = h + deg_to_rad(GRADI_VIRATA) * vi[0]
+		# la rotta curva verso l'inclinazione richiesta dalla virata (almeno 25 gradi)
+		var giro: float = 0.0
+		if absf(vi[0]) > 0.01:
+			giro = signf(vi[0]) * maxf(25.0, GRADI_VIRATA * absf(vi[0]))
+		var h2: float = h + deg_to_rad(giro)
 		var y0: float = alt0 if i <= pos0 else alt0 * (1.0 - float(i - pos0) / maxi(1, ultima - pos0))
 		var y1: float = alt0 if i + 1 <= pos0 else alt0 * (1.0 - float(i + 1 - pos0) / maxi(1, ultima - pos0))
 		var a := Vector3(p.x, y0, p.z)
@@ -380,8 +384,8 @@ func _nastro(dove: Node3D, pts: Array, banca: float) -> void:
 		var b: Vector3 = pts[k + 1]
 		var tan := (b - a).normalized()
 		var lat := tan.cross(Vector3.UP).normalized()
-		var r1 := sin(PI * k / 12.0) * deg_to_rad(14.0) * banca
-		var r2 := sin(PI * (k + 1) / 12.0) * deg_to_rad(14.0) * banca
+		var r1 := sin(PI * k / 12.0) * deg_to_rad(18.0) * banca
+		var r2 := sin(PI * (k + 1) / 12.0) * deg_to_rad(18.0) * banca
 		var la := lat.rotated(tan, r1) * largo
 		var lb := lat.rotated(tan, r2) * largo
 		for v in [a - la, a + la, b + lb, a - la, b + lb, b - lb]:
@@ -617,7 +621,7 @@ func _angolo_rotta(t: float) -> float:
 func _process(dt: float) -> void:
 	if s.is_empty() or not is_visible_in_tree():
 		return
-	t_attuale = move_toward(t_attuale, t_meta, dt * 0.7)
+	t_attuale = move_toward(t_attuale, t_meta, dt * 1.4)
 	quota_vis = move_toward(quota_vis, float(s["quota"]), dt * 0.8)
 	var a: int = s["asse"]
 	rollio = lerp(rollio, deg_to_rad(a * 13.0), clampf(dt * 3.0, 0, 1))
@@ -643,7 +647,7 @@ func _process(dt: float) -> void:
 		g.scale.y = move_toward(g.scale.y, 1.0 if giu else 0.01, dt * 1.5)
 		g.visible = g.scale.y > 0.05
 	# basamento sotto l'aereo
-	basamento.position = pa - Vector3(0, 1.5, 0) - _dir(h) * 1.9
+	basamento.position = pa - Vector3(0, 1.3, 0) - _dir(h).cross(Vector3.UP).normalized() * 3.0
 	var vc := cam.global_position - basamento.position
 	basamento.rotation = Vector3(0, atan2(vc.x, vc.z), 0)
 	basamento.rotate_object_local(Vector3.RIGHT, deg_to_rad(30))
@@ -656,12 +660,14 @@ func _process(dt: float) -> void:
 	verso.y = 0
 	var hv := atan2(verso.x, -verso.z) if verso.length() > 1.0 else h
 	if segue:
-		h_cam = lerp_angle(h_cam, hv, clampf(dt * 2.0, 0, 1))
+		# sempre alle spalle dell'aereo: destra e sinistra dello schermo sono quelle del pilota
+		var hm := lerp_angle(h, hv, 0.35)
+		h_cam = hm if dist_fit <= 0.0 else lerp_angle(h_cam, hm, clampf(dt * 1.5, 0, 1))
 	# su schermi stretti si guarda più da dietro, così la discesa resta verticale
 	var asp := size.x / maxf(1.0, size.y)
 	var k := clampf((asp - 0.4) / 0.35, 0.0, 1.0)
-	var ya := yaw + lerpf(0.35, 0.8, k)
-	var pi_ := clampf(pitch - lerpf(0.18, 0.0, k), -1.45, 0.25)
+	var ya := yaw + lerpf(0.18, 0.3, k)
+	var pi_ := clampf(pitch - lerpf(0.06, 0.0, k), -1.45, 0.25)
 	var dir := Vector3(-sin(h_cam - ya) * cos(pi_), -sin(pi_), cos(h_cam - ya) * cos(pi_))
 	var fit := _inquadra(pa, dir)
 	if segue:
@@ -729,7 +735,7 @@ func _inquadra(pa: Vector3, dir: Vector3) -> Array:
 
 func centra() -> void:
 	yaw = 0.0
-	pitch = -0.2
+	pitch = -0.16
 	zoom = 1.0
 	spost = Vector3.ZERO
 	segue = true
