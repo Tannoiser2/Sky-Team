@@ -13,6 +13,7 @@ var rete: Rete
 var nome_altro := ""
 
 var tavolo: Tavolo
+var comandi_vista: HBoxContainer
 var colonna: VBoxContainer
 var l_titolo: Label
 var l_info: Label
@@ -61,6 +62,8 @@ func _costruisci() -> void:
 	add_child(fondo)
 	tavolo = Tavolo.new()
 	tavolo.io = io
+	if rete and rete.carica("skyteam_vista") == "2d":
+		tavolo.tre_d = false
 	add_child(tavolo)
 	tavolo.spazio_toccato.connect(_spazio)
 	var pc := PanelContainer.new()
@@ -149,6 +152,26 @@ func _costruisci() -> void:
 		var b3 := Stile.bottone("Schermo intero", 22)
 		b3.pressed.connect(func(): rete.schermo_intero())
 		basso.add_child(b3)
+	# comandi della vista, sopra il tavolo in alto a sinistra
+	comandi_vista = HBoxContainer.new()
+	comandi_vista.add_theme_constant_override("separation", 8)
+	add_child(comandi_vista)
+	var bv := Stile.bottone("Vista 2D" if tavolo.tre_d else "Vista 3D", 20)
+	var bc := Stile.bottone("Centra", 20)
+	bc.visible = tavolo.tre_d
+	bc.pressed.connect(func():
+		if tavolo.vista:
+			tavolo.vista.centra())
+	bv.pressed.connect(func():
+		tavolo.imposta_3d(not tavolo.tre_d)
+		bv.text = "Vista 2D" if tavolo.tre_d else "Vista 3D"
+		bc.visible = tavolo.tre_d
+		if rete:
+			rete.salva("skyteam_vista", "3d" if tavolo.tre_d else "2d")
+		tavolo.imposta(s)
+		_disponi())
+	comandi_vista.add_child(bv)
+	comandi_vista.add_child(bc)
 	resized.connect(_disponi)
 	_disponi.call_deferred()
 
@@ -157,11 +180,17 @@ func _disponi() -> void:
 		return
 	var W := size.x
 	var H := size.y
-	var largo_col := clampf(W * 0.3, 380.0, 560.0)
+	var largo_col := clampf(W * (0.24 if tavolo.tre_d else 0.3), 360.0, 560.0)
 	tavolo.position = Vector2.ZERO
 	tavolo.size = Vector2(W - largo_col, H)
 	tavolo._disponi()
 	var x := minf(tavolo.larghezza_usata(), W - largo_col)
+	if comandi_vista:
+		var r: Rect2 = tavolo.r_3d if tavolo.tre_d else tavolo.r_pista
+		comandi_vista.position = tavolo.position + r.position + Vector2(10, 10)
+		if not tavolo.tre_d and r.end.y + 66 < tavolo.size.y:
+			comandi_vista.position = tavolo.position + Vector2(r.position.x, r.end.y + 10)
+		comandi_vista.size = comandi_vista.get_combined_minimum_size()
 	var pc: Control = get_node("Colonna")
 	pc.position = Vector2(x, 8)
 	pc.size = Vector2(W - x - 8, H - 16)

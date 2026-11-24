@@ -12,6 +12,7 @@ func _init() -> void:
 	if a.size() >= 3:
 		root.size = Vector2i(int(a[1]), int(a[2]))
 	var scen := a[3] if a.size() >= 4 else "atl2"
+	Rete.new().salva("skyteam_vista", "3d")
 	DirAccess.make_dir_recursive_absolute(dir)
 	await process_frame
 	var main = load("res://scenes/main.tscn").instantiate()

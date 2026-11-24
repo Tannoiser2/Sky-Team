@@ -4,6 +4,9 @@ extends Control
 var rete: Rete
 var schermo: Control
 var partita: Partita
+var lista_aeroporti: VBoxContainer
+var bottoni_schede := {}
+var fonte_scelta := ""
 var scelto_id := "yul"
 var ruolo := 0
 var compagno := "ia"
@@ -138,34 +141,37 @@ func _scelta() -> void:
 	pl.add_child(vl)
 	var tit := Stile.etichetta("SCEGLI L'AEROPORTO" if online == "" else "ONLINE: SCEGLI L'AEROPORTO", 34, Color.WHITE, Stile.titolo())
 	vl.add_child(tit)
+	# schede: gioco base, Turbolenze, promozionali
+	var schede := HBoxContainer.new()
+	schede.add_theme_constant_override("separation", 8)
+	vl.add_child(schede)
 	var sc := ScrollContainer.new()
 	sc.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	vl.add_child(sc)
-	var lista := VBoxContainer.new()
-	lista.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	lista.add_theme_constant_override("separation", 6)
-	sc.add_child(lista)
-	var gruppi := {"base": "Gioco base", "turbolenze": "Espansione Turbolenze", "promo": "Scenari promozionali"}
+	lista_aeroporti = VBoxContainer.new()
+	lista_aeroporti.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	lista_aeroporti.add_theme_constant_override("separation", 8)
+	sc.add_child(lista_aeroporti)
+	if fonte_scelta == "":
+		fonte_scelta = Motore.scenario(scelto_id).get("fonte", "base")
+	var gruppi := {"base": "Gioco base", "turbolenze": "Turbolenze", "promo": "Promozionali"}
+	bottoni_schede = {}
 	for g in gruppi:
-		lista.add_child(Stile.etichetta(gruppi[g].to_upper(), 26, Stile.GIALLO, Stile.grassetto()))
-		for sc2 in Motore.scenari():
-			if sc2["fonte"] != g:
-				continue
-			var b := Button.new()
-			b.text = "%s  %s" % [sc2["codice"], sc2["nome"]]
-			b.alignment = HORIZONTAL_ALIGNMENT_LEFT
-			b.custom_minimum_size = Vector2(300, 52)
-			b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			b.focus_mode = Control.FOCUS_NONE
-			var col: Color = Stile.DIFFICOLTA[sc2["colore"]]
-			var bordo := col if sc2["colore"] != "nero" else Color("8a8f99")
-			b.add_theme_stylebox_override("normal", Stile.scatola(col.darkened(0.55) if sc2["colore"] != "nero" else Color("101114"), bordo, 8, 3))
-			b.add_theme_stylebox_override("hover", Stile.scatola(col.darkened(0.35) if sc2["colore"] != "nero" else Color("24262b"), Color.WHITE, 8, 3))
-			b.add_theme_stylebox_override("pressed", Stile.scatola(col.darkened(0.2), Stile.GIALLO, 8, 4))
-			var id: String = sc2["id"]
-			b.pressed.connect(func(): scelto_id = id; abilita_scelte = {}; _mostra_dettaglio())
-			lista.add_child(b)
+		var b := Button.new()
+		b.text = gruppi[g]
+		b.custom_minimum_size = Vector2(150, 50)
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		b.focus_mode = Control.FOCUS_NONE
+		b.add_theme_font_override("font", Stile.grassetto())
+		b.add_theme_font_size_override("font_size", 22)
+		var gg: String = g
+		b.pressed.connect(func():
+			fonte_scelta = gg
+			_riempi_aeroporti())
+		schede.add_child(b)
+		bottoni_schede[g] = b
+	_riempi_aeroporti()
 	# dettaglio
 	var pd := PanelContainer.new()
 	pd.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -179,6 +185,82 @@ func _scelta() -> void:
 	dettaglio.add_theme_constant_override("separation", 12)
 	sd.add_child(dettaglio)
 	_mostra_dettaglio()
+
+## Una scheda per aeroporto, con i suoi voli colorati per difficoltà
+func _riempi_aeroporti() -> void:
+	for g in bottoni_schede:
+		var attiva: bool = g == fonte_scelta
+		var b: Button = bottoni_schede[g]
+		b.add_theme_stylebox_override("normal", Stile.scatola(Color("2a3f66") if attiva else Color("141c2b"), Stile.GIALLO if attiva else Color("3a4a66"), 8, 3 if attiva else 2))
+		b.add_theme_stylebox_override("hover", Stile.scatola(Color("2f4874"), Color.WHITE, 8, 3))
+		b.add_theme_stylebox_override("pressed", Stile.scatola(Color("2a3f66"), Stile.GIALLO, 8, 3))
+		b.add_theme_color_override("font_color", Color.WHITE if attiva else Stile.TESTO_DEBOLE)
+	for c in lista_aeroporti.get_children():
+		lista_aeroporti.remove_child(c)
+		c.queue_free()
+	var ordine: Array = []
+	var voli := {}
+	for sc2 in Motore.scenari():
+		if sc2["fonte"] != fonte_scelta:
+			continue
+		var k: String = sc2["codice"]
+		if not voli.has(k):
+			voli[k] = []
+			ordine.append(k)
+		voli[k].append(sc2)
+	for k in ordine:
+		var primo: Dictionary = voli[k][0]
+		var scheda := PanelContainer.new()
+		var dentro: bool = Motore.scenario(scelto_id).get("codice", "") == k and Motore.scenario(scelto_id).get("fonte", "") == fonte_scelta
+		scheda.add_theme_stylebox_override("panel", Stile.scatola(Color("16223a") if dentro else Color("111827"), Stile.GIALLO if dentro else Color("2c3a55"), 10, 2))
+		lista_aeroporti.add_child(scheda)
+		var riga := HBoxContainer.new()
+		riga.add_theme_constant_override("separation", 12)
+		scheda.add_child(riga)
+		var nomi := VBoxContainer.new()
+		nomi.custom_minimum_size = Vector2(170, 0)
+		nomi.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		nomi.add_theme_constant_override("separation", 0)
+		riga.add_child(nomi)
+		nomi.add_child(Stile.etichetta(k, 30, Color.WHITE, Stile.titolo()))
+		var ln := Stile.etichetta(primo["nome"], 20, Stile.TESTO_DEBOLE)
+		ln.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		ln.custom_minimum_size = Vector2(150, 0)
+		nomi.add_child(ln)
+		var tasti := HFlowContainer.new()
+		tasti.add_theme_constant_override("h_separation", 6)
+		tasti.add_theme_constant_override("v_separation", 6)
+		tasti.alignment = FlowContainer.ALIGNMENT_END
+		tasti.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		tasti.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		riga.add_child(tasti)
+		for sc2 in voli[k]:
+			var b := Button.new()
+			var suff: String = sc2["id"].substr(k.length()).to_upper()
+			b.text = "Volo %s" % suff if suff != "" else "Volo"
+			b.custom_minimum_size = Vector2(104, 50)
+			b.focus_mode = Control.FOCUS_NONE
+			b.add_theme_font_override("font", Stile.grassetto())
+			b.add_theme_font_size_override("font_size", 20)
+			var col: Color = Stile.DIFFICOLTA[sc2["colore"]]
+			var nero: bool = sc2["colore"] == "nero"
+			var bordo := col if not nero else Color("8a8f99")
+			var sel: bool = sc2["id"] == scelto_id
+			b.add_theme_stylebox_override("normal", Stile.scatola(col.darkened(0.45) if not nero else Color("101114"), Stile.GIALLO if sel else bordo, 8, 4 if sel else 3))
+			b.add_theme_stylebox_override("hover", Stile.scatola(col.darkened(0.25) if not nero else Color("24262b"), Color.WHITE, 8, 3))
+			b.add_theme_stylebox_override("pressed", Stile.scatola(col.darkened(0.2), Stile.GIALLO, 8, 4))
+			b.tooltip_text = "%s %s" % [sc2["codice"], sc2["nome"]]
+			var id: String = sc2["id"]
+			b.pressed.connect(func():
+				scelto_id = id
+				abilita_scelte = {}
+				_riempi_aeroporti.call_deferred()
+				_mostra_dettaglio())
+			tasti.add_child(b)
+	var nota := Stile.etichetta("Colore del volo = difficoltà: verde facile, giallo media, rosso difficile, nero estrema.", 18, Stile.TESTO_DEBOLE)
+	nota.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	nota.custom_minimum_size = Vector2(250, 0)
+	lista_aeroporti.add_child(nota)
 
 func _mostra_dettaglio() -> void:
 	for c in dettaglio.get_children():

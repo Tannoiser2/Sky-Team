@@ -47,6 +47,9 @@ var r_quota := Rect2()
 var r_moduli := Rect2()
 var k := 1.0                  # scala del pannello
 
+var tre_d := true
+var vista: Vista3D
+var r_3d := Rect2()
 var t_pannello: Texture2D
 var t_pista: Texture2D
 var t_quota: Texture2D
@@ -56,6 +59,12 @@ func _ready() -> void:
 	t_pannello = Stile.tex("res://assets/img/pannello.webp")
 	resized.connect(_disponi)
 
+func imposta_3d(si: bool) -> void:
+	tre_d = si
+	if vista:
+		vista.visible = si
+	_disponi()
+
 func imposta(stato: Dictionary) -> void:
 	var cambio_pista: bool = s.is_empty() or s.get("pista") != stato.get("pista")
 	s = stato
@@ -63,6 +72,12 @@ func imposta(stato: Dictionary) -> void:
 		t_pista = Stile.tex("res://assets/img/piste/%s.webp" % s["pista"])
 		var q: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://assets/dati/quote.json"))
 		t_quota = Stile.tex("res://assets/img/piste/" + q[s["quota_tipo"]]["img"])
+	if tre_d:
+		if vista == null:
+			vista = Vista3D.new()
+			add_child(vista)
+		vista.visible = true
+		vista.imposta(s)
 	_disponi()
 	queue_redraw()
 
@@ -84,17 +99,34 @@ func _disponi() -> void:
 	var aq := 400.0 / 1672.0
 	var ar := PW / PH
 	var am := 0.2 if _ha_moduli() else 0.0
-	var serve := alt * (ap + ar + aq * 0.8 + am) + 5 * m
-	if serve > W:
-		alt = (W - 5 * m) / (ap + ar + aq * 0.8 + am)
-	r_pista = Rect2(m, m, alt * ap, alt)
-	r_pannello = Rect2(r_pista.end.x + m, m, alt * ar, alt)
-	r_quota = Rect2(r_pannello.end.x + m, m + alt * 0.1, alt * aq * 0.8, alt * 0.8)
-	r_moduli = Rect2(r_quota.end.x + m, m, alt * am, alt)
+	if tre_d:
+		# vista 3D a sinistra, poi plancia e moduli; la 3D tiene almeno il 38% dello spazio
+		var serve3 := alt * (ar + am) + 4 * m
+		if serve3 > W * 0.62:
+			alt = (W * 0.62 - 4 * m) / (ar + am)
+		var larg3 := W - alt * (ar + am) - 4 * m
+		r_3d = Rect2(m, m, larg3, H - 2 * m)
+		r_pannello = Rect2(r_3d.end.x + m, m, alt * ar, alt)
+		r_quota = Rect2(r_pannello.end.x, m, 0, 0)
+		r_moduli = Rect2(r_pannello.end.x + m, m, alt * am, alt)
+		r_pista = Rect2()
+		if vista:
+			vista.position = r_3d.position
+			vista.size = r_3d.size
+	else:
+		var serve := alt * (ap + ar + aq * 0.8 + am) + 5 * m
+		if serve > W:
+			alt = (W - 5 * m) / (ap + ar + aq * 0.8 + am)
+		r_pista = Rect2(m, m, alt * ap, alt)
+		r_pannello = Rect2(r_pista.end.x + m, m, alt * ar, alt)
+		r_quota = Rect2(r_pannello.end.x + m, m + alt * 0.1, alt * aq * 0.8, alt * 0.8)
+		r_moduli = Rect2(r_quota.end.x + m, m, alt * am, alt)
 	k = r_pannello.size.x / PW
 	queue_redraw()
 
 func larghezza_usata() -> float:
+	if tre_d:
+		return (r_moduli.end.x if r_moduli.size.x > 0 else r_pannello.end.x) + 10.0
 	return (r_moduli.end.x if r_moduli.size.x > 0 else r_quota.end.x) + 10.0
 
 func _ha_moduli() -> bool:
@@ -158,8 +190,9 @@ func pos_spazio(sp: String) -> Vector2:
 func _draw() -> void:
 	if s.is_empty():
 		return
-	_disegna_pista()
-	_disegna_quota()
+	if not tre_d:
+		_disegna_pista()
+		_disegna_quota()
 	draw_texture_rect(t_pannello, r_pannello, false)
 	_disegna_finestre()
 	_disegna_orizzonte()
