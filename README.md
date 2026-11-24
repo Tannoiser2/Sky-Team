@@ -15,6 +15,7 @@ Pilota (blu) e Copilota (arancione) piazzano in silenzio i dadi sulla plancia di
 - **Comandi della vista 3D**: mouse (sinistro ruota, destro sposta, rotella zoom, doppio clic centra) e tocco (un dito sposta, due dita pizzicano per lo zoom e ruotano).
 - **Scelta del volo per aeroporto**: schede Gioco base, Turbolenze, Promozionali; una riga per aeroporto con i suoi voli colorati per difficoltà.
 - **Aeroporti veri**: sotto ogni pista c'è l'immagine satellitare vera dell'aeroporto, girata in modo che la pista del gioco stia sopra quella reale (1 unità della scena = 500 m). Pista, lunghezza, quota e città vengono da OurAirports (`assets/dati/aeroporti.json`); le immagini (`assets/img/mappe/`) si rigenerano con l'Action «Mappe satellitari» (`tools/mappe.py`). Fonti: OurAirports (pubblico dominio); Sentinel-2 cloudless di EOX IT Services, https://s2maps.eu (CC BY-NC-SA 4.0, con dati Copernicus Sentinel 2020 modificati).
+- **Televisore e telefoni**: dal menu «Televisore e telefoni» il televisore (o il computer collegato) apre una stanza con codice QR. Il primo telefono che entra è il Pilota, il secondo il Copilota (si possono scambiare); un posto vuoto lo gioca l'IA o l'Automa. Il televisore applica le regole e mostra in alto plancia con i dadi e rotta 3D, sotto turno, dadi rimasti, diario e scenario; ogni telefono mostra la sua plancia, i suoi dadi, caffè e azioni.
 - Tutto in italiano.
 
 ## Struttura
