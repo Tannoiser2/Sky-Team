@@ -757,7 +757,12 @@ func _traffico() -> void:
 		var lat := _dir(h).cross(Vector3.UP).normalized()
 		for j in n:
 			var off: float = (j - (n - 1) * 0.5) * 1.15
-			var p := base + lat * off + Vector3(0, 0.25, 0)
+			# davanti al traguardo (verso l'aeroporto), così non finiscono sotto il nostro aereo
+			var avanti := base + _dir(h) * 2.6
+			if i < ultima:
+				avanti = _posizione_rotta(i + 2.6 / D)
+				lat = (_posizione_rotta(i + 2.6 / D + 0.05) - _posizione_rotta(i + 2.6 / D - 0.05)).cross(Vector3.UP).normalized()
+			var p := avanti + lat * off + Vector3(0, 0.25, 0)
 			if s["pinguini"]:
 				var sp := Sprite3D.new()
 				sp.texture = tex_p
@@ -768,8 +773,8 @@ func _traffico() -> void:
 			else:
 				var mi := MeshInstance3D.new()
 				mi.mesh = mesh
-				# aerei del traffico: rossi e grandi, con il muso verso di noi (vengono in senso contrario)
-				mi.material_override = _mat(Color("d8452b"))
+				# aerei del traffico: bianchi e grandi, con il muso verso di noi (vengono in senso contrario)
+				mi.material_override = _mat(Color("f4f6f8"))
 				mi.scale = Vector3.ONE * 0.2
 				mi.position = p
 				mi.rotation.y = -h + PI
