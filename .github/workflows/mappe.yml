@@ -1,0 +1,23 @@
+name: Mappe satellitari
+# Scarica le immagini satellitari degli aeroporti e le salva nel repository.
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  mappe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pillow
+      - run: python tools/mappe.py
+      - name: Salva le mappe
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add assets/img/mappe
+          git commit -m "Mappe satellitari degli aeroporti (Sentinel-2 cloudless di EOX)" || echo "niente di nuovo"
+          git push
