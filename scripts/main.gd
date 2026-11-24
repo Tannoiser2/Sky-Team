@@ -27,6 +27,10 @@ func _ready() -> void:
 	add_child(rete)
 	rete.evento.connect(_evento_rete)
 	get_viewport().gui_embed_subwindows = true
+	# il telefono che si gira cambia la base dell'interfaccia
+	get_tree().root.size_changed.connect(func():
+		if scala_telefono_attiva:
+			_scala_telefono(true))
 	var p := rete.parametri()
 	if p.has("stanza"):
 		_entra_codice(str(p["stanza"]))
@@ -89,6 +93,9 @@ func _home() -> void:
 		var b2 := Stile.bottone("Riprendi il volo salvato", 30)
 		b2.pressed.connect(func(): _riprendi(salvato))
 		v.add_child(b2)
+	var btv := Stile.bottone("Televisore e telefoni", 30)
+	btv.pressed.connect(func(): online = "tv"; _scelta())
+	v.add_child(btv)
 	var b3 := Stile.bottone("Online: crea una stanza", 30)
 	b3.pressed.connect(func(): online = "crea"; _scelta())
 	v.add_child(b3)
@@ -364,7 +371,7 @@ func _mostra_dettaglio() -> void:
 	for a in abilita_scelte:
 		if abilita_scelte[a]:
 			scelte.append(a)
-	var via := Stile.bottone("DECOLLA!" if online == "" else "CREA LA STANZA", 34)
+	var via := Stile.bottone("DECOLLA!" if online == "" else ("APRI LA STANZA DEL TELEVISORE" if online == "tv" else "CREA LA STANZA"), 34)
 	via.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	via.disabled = n_ab > 0 and scelte.size() != n_ab
 	if via.disabled:
@@ -392,6 +399,9 @@ func _parti() -> void:
 	if online == "crea":
 		_apri_stanza(s)
 		return
+	if online == "tv":
+		_apri_tv(s)
+		return
 	_gioca(s, ruolo, compagno)
 
 func _gioca(s: Dictionary, colore: int, modo: String) -> void:
@@ -403,8 +413,10 @@ func _gioca(s: Dictionary, colore: int, modo: String) -> void:
 	partita._dopo()
 
 func _esci_partita() -> void:
-	if partita and (partita.modo == "host" or partita.modo == "ospite"):
+	if partita and partita.modo in ["host", "ospite", "tv", "telefono"]:
 		rete.chiudi()
+	_scala_telefono(false)
+	tv_attesa = {}
 	_home()
 
 func _riprendi(j: String) -> void:
@@ -459,6 +471,8 @@ func _entra_codice(c: String) -> void:
 		if stato_rete:
 			stato_rete.text = "Il gioco online funziona solo nella versione per browser."
 		return
+	if schermo == null:
+		_attesa_telefono("Entro nella stanza %s..." % c)
 	if stato_rete:
 		stato_rete.text = "Entro nella stanza %s..." % c
 	rete.entra(c, "Compagno")
@@ -466,10 +480,20 @@ func _entra_codice(c: String) -> void:
 func _evento_rete(e: Dictionary) -> void:
 	match e.get("e"):
 		"stanza":
+			if not tv_attesa.is_empty():
+				tv_url = str(e.get("url", ""))
+				_tv_qr(tv_url)
+				if stato_rete:
+					stato_rete.text = "Codice della stanza: %s" % e.get("codice", "")
+				_tv_lobby()
+				return
 			if stato_rete:
 				var link: String = str(e.get("url", "")).replace("telefono.html?s=", "?stanza=")
 				stato_rete.text = "Codice della stanza: %s\n%s\nIn attesa del compagno..." % [e.get("codice", ""), link]
 		"entra":
+			if not tv_attesa.is_empty():
+				_tv_entra(str(e.get("uid", "")))
+				return
 			if not stanza_attesa.is_empty() and partita == null:
 				var s := stanza_attesa
 				stanza_attesa = {}
@@ -480,17 +504,29 @@ func _evento_rete(e: Dictionary) -> void:
 				partita.esci.connect(_esci_partita)
 				partita.avvia(s, ruolo, "host", rete)
 				partita._dopo()
+		"esce":
+			if not tv_attesa.is_empty():
+				tv_posti.erase(str(e.get("uid", "")))
+				_tv_lobby()
 		"azione":
-			if partita and partita.modo == "host":
+			if partita and (partita.modo == "host" or partita.modo == "tv"):
 				var a = JSON.parse_string(str(e.get("p", "")))
 				if a is Dictionary:
-					partita.mossa_remota(a)
+					partita.mossa_remota(a, str(e.get("uid", "")))
 		"dentro":
 			if stato_rete:
 				stato_rete.text = "Dentro! Aspetto il tavolo..."
 		"stato":
 			var d = JSON.parse_string(str(e.get("j", "")))
-			if not d is Dictionary or not d.has("s"):
+			if not d is Dictionary:
+				return
+			if d.has("lobby"):
+				_telefono_lobby(d["lobby"])
+				return
+			if d.has("tv") and d.has("s"):
+				_telefono_stato(d)
+				return
+			if not d.has("s"):
 				return
 			if partita == null:
 				var st: Dictionary = d["s"]
@@ -517,3 +553,204 @@ func _evento_rete(e: Dictionary) -> void:
 				stato_rete.text = "Errore: " + str(e.get("msg", ""))
 			elif partita:
 				partita._avviso("Rete: " + str(e.get("msg", "")))
+
+# ------------------------------------------------------------------ televisore e telefoni
+# Il televisore apre la stanza e applica le regole; mostra rotta 3D, plancia con i dadi e informazioni.
+# Ogni giocatore entra con il telefono (QR code o codice) e piazza i suoi dadi sulla plancia del telefono.
+# Un posto senza telefono lo gioca il computer (IA, o l'Automa se è il Copilota e lo avete scelto).
+
+var tv_attesa: Dictionary = {}
+var tv_posti := {}            # identità del telefono -> posto (0 Pilota, 1 Copilota)
+var tv_url := ""
+var tv_codice := ""
+var l_posti: Array = []
+var qr_rect: TextureRect
+
+func _apri_tv(s: Dictionary) -> void:
+	tv_attesa = s
+	tv_posti = {}
+	tv_url = ""
+	_pulisci()
+	schermo = Control.new()
+	schermo.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(schermo)
+	_fondo(schermo)
+	var cc := CenterContainer.new()
+	cc.set_anchors_preset(Control.PRESET_FULL_RECT)
+	schermo.add_child(cc)
+	var p := PanelContainer.new()
+	cc.add_child(p)
+	var h := HBoxContainer.new()
+	h.add_theme_constant_override("separation", 40)
+	p.add_child(h)
+	qr_rect = TextureRect.new()
+	qr_rect.custom_minimum_size = Vector2(420, 420)
+	qr_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	qr_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	qr_rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	h.add_child(qr_rect)
+	var v := VBoxContainer.new()
+	v.custom_minimum_size = Vector2(720, 0)
+	v.add_theme_constant_override("separation", 16)
+	h.add_child(v)
+	var sc := Motore.scenario(s["scenario"])
+	v.add_child(Stile.etichetta("TELEVISORE E TELEFONI", 44, Color.WHITE, Stile.titolo()))
+	v.add_child(Stile.etichetta("%s  %s" % [sc["codice"], sc["nome"]], 30, Stile.GIALLO, Stile.grassetto()))
+	stato_rete = Stile.paragrafo("Apro la stanza...", 30, Stile.GIALLO)
+	v.add_child(stato_rete)
+	v.add_child(Stile.paragrafo("Ogni giocatore inquadra il codice QR con il telefono (oppure apre Sky Team, scrive il codice e preme «Online: entra nella stanza»). Il primo telefono è il Pilota, il secondo il Copilota. Un posto vuoto lo gioca il computer.", 24, Stile.TESTO_DEBOLE))
+	l_posti = []
+	for c in 2:
+		var l := Stile.etichetta("", 32, Color.WHITE, Stile.grassetto())
+		v.add_child(l)
+		l_posti.append(l)
+	var r := HBoxContainer.new()
+	r.add_theme_constant_override("separation", 12)
+	v.add_child(r)
+	var bs := Stile.bottone("Scambia i posti", 26)
+	bs.pressed.connect(func():
+		for k in tv_posti:
+			tv_posti[k] = 1 - int(tv_posti[k])
+		_tv_lobby())
+	r.add_child(bs)
+	var bi := Stile.bottone("INIZIA IL VOLO", 30)
+	bi.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	bi.pressed.connect(_tv_inizia)
+	r.add_child(bi)
+	var ba := Stile.bottone("Annulla", 26)
+	ba.pressed.connect(func(): rete.chiudi(); tv_attesa = {}; _home())
+	r.add_child(ba)
+	_tv_lobby()
+	if not rete.web:
+		stato_rete.text = "Televisore e telefoni funzionano solo nella versione per browser."
+		return
+	rete.avvia()
+
+func _tv_entra(uid: String) -> void:
+	if uid == "" or tv_posti.has(uid):
+		_tv_lobby()
+		return
+	var liberi := [0, 1]
+	for k in tv_posti:
+		liberi.erase(int(tv_posti[k]))
+	if not liberi.is_empty():
+		tv_posti[uid] = liberi[0]
+	_tv_lobby()
+
+func _tv_lobby() -> void:
+	if tv_attesa.is_empty():
+		return
+	for c in 2:
+		var chi := ""
+		for k in tv_posti:
+			if int(tv_posti[k]) == c:
+				chi = "telefono collegato"
+		if chi == "":
+			chi = "computer (" + ("Automa" if c == 1 and compagno == "automa" else "IA") + ")"
+		if c < l_posti.size():
+			l_posti[c].text = "%s: %s" % [Motore.nome_ruolo(c).to_upper(), chi]
+			l_posti[c].add_theme_color_override("font_color", Stile.BLU.lightened(0.4) if c == 0 else Stile.ARANCIO.lightened(0.2))
+	if rete.web and rete.codice != "":
+		var sc := Motore.scenario(tv_attesa["scenario"])
+		rete.stato({"lobby": {"posti": tv_posti, "volo": "%s %s" % [sc["codice"], sc["nome"]]}})
+
+func _tv_qr(url: String) -> void:
+	var bit := rete.qr(url)
+	var n := int(round(sqrt(float(bit.length()))))
+	if n < 10 or qr_rect == null:
+		return
+	var margine := 3
+	var lato := n + margine * 2
+	var im := Image.create(lato, lato, false, Image.FORMAT_RGB8)
+	im.fill(Color.WHITE)
+	for y in n:
+		for x in n:
+			if bit[y * n + x] == "1":
+				im.set_pixel(x + margine, y + margine, Color.BLACK)
+	qr_rect.texture = ImageTexture.create_from_image(im)
+
+func _tv_inizia() -> void:
+	var s := tv_attesa
+	tv_attesa = {}
+	var posti := {0: "ia", 1: "automa" if compagno == "automa" else "ia"}
+	for k in tv_posti:
+		posti[int(tv_posti[k])] = "telefono"
+	_pulisci()
+	partita = Partita.new()
+	partita.posti = posti
+	partita.telefoni = tv_posti.duplicate()
+	add_child(partita)
+	partita.esci.connect(_esci_partita)
+	partita.avvia(s, 0, "tv", rete)
+	partita._dopo()
+
+## Telefono: schermata d'attesa (testo grande, adatto al telefono)
+func _attesa_telefono(t: String) -> void:
+	_pulisci()
+	_scala_telefono(true)
+	schermo = Control.new()
+	schermo.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(schermo)
+	_fondo(schermo)
+	var cc := CenterContainer.new()
+	cc.set_anchors_preset(Control.PRESET_FULL_RECT)
+	schermo.add_child(cc)
+	var v := VBoxContainer.new()
+	v.custom_minimum_size = Vector2(640, 0)
+	v.add_theme_constant_override("separation", 24)
+	cc.add_child(v)
+	var ti := Stile.etichetta("SKY TEAM", 90, Color.WHITE, Stile.titolo())
+	ti.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	v.add_child(ti)
+	stato_rete = Stile.paragrafo(t, 34, Stile.GIALLO)
+	stato_rete.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	v.add_child(stato_rete)
+	var b := Stile.bottone("Esci", 30)
+	b.pressed.connect(func(): rete.chiudi(); _scala_telefono(false); _home())
+	v.add_child(b)
+
+func _telefono_lobby(l: Dictionary) -> void:
+	if partita != null:
+		return
+	if schermo == null or stato_rete == null:
+		_attesa_telefono("")
+	var posti: Dictionary = l.get("posti", {})
+	var testo := "Volo: %s\n\n" % str(l.get("volo", ""))
+	if posti.has(rete.uid):
+		var c := int(posti[rete.uid])
+		testo += "Sei il %s.\nQuando tutti sono pronti, si parte dal televisore." % Motore.nome_ruolo(c).to_upper()
+	else:
+		testo += "I due posti sono già occupati: puoi solo guardare il televisore."
+	stato_rete.text = testo
+
+func _telefono_stato(d: Dictionary) -> void:
+	var posti: Dictionary = d.get("posti", {})
+	if partita == null:
+		if not posti.has(rete.uid):
+			if stato_rete:
+				stato_rete.text = "Il volo è partito senza questo telefono: i posti sono occupati."
+			return
+		_pulisci()
+		_scala_telefono(true)
+		partita = Partita.new()
+		add_child(partita)
+		partita.esci.connect(_esci_partita)
+		partita.avvia(d["s"], int(posti[rete.uid]), "telefono", rete)
+	else:
+		partita.ricevi(d["s"])
+	if d.has("errore") and str(d.get("a_chi", "")) == rete.uid:
+		partita._avviso(str(d["errore"]))
+
+## Sul telefono l'interfaccia usa una base più piccola, così dadi e scritte restano grandi
+var scala_telefono_attiva := false
+
+func _scala_telefono(si: bool) -> void:
+	scala_telefono_attiva = si
+	var w := get_tree().root
+	if not si:
+		w.content_scale_size = Vector2i(1920, 1080)
+		return
+	var r := DisplayServer.window_get_size()
+	var voluta := Vector2i(820, 1400) if r.y >= r.x else Vector2i(1400, 820)
+	if w.content_scale_size != voluta:
+		w.content_scale_size = voluta

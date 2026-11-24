@@ -49,6 +49,9 @@ var k := 1.0                  # scala del pannello
 
 var tre_d := true
 var orizzontale := true
+var solo_plancia := false   # telefono: solo plancia e moduli
+var tv := false             # televisore: plancia e 3D in alto, informazioni sotto
+var alto_tv := 0.0
 var vista: Vista3D
 var r_3d := Rect2()
 var t_pannello: Texture2D
@@ -101,6 +104,33 @@ func _disponi() -> void:
 	var ar := PW / PH
 	var am := 0.2 if _ha_moduli() else 0.0
 	orizzontale = W > H * 1.25
+	if solo_plancia:
+		alt = minf(H - 2 * m, (W - 3 * m) / (ar + am))
+		var x0 := (W - alt * (ar + am) - m) * 0.5
+		r_pannello = Rect2(x0, m, alt * ar, alt)
+		r_quota = Rect2(r_pannello.end.x, m, 0, 0)
+		r_moduli = Rect2(r_pannello.end.x + m, m, alt * am, alt)
+		r_pista = Rect2()
+		r_3d = Rect2()
+		k = r_pannello.size.x / PW
+		queue_redraw()
+		return
+	if tre_d and tv:
+		# televisore: in alto plancia (con i moduli) e rotta 3D affiancate; sotto restano le informazioni
+		alt = roundf(H * 0.68) - 2 * m
+		r_pannello = Rect2(m, m, alt * ar, alt)
+		r_quota = Rect2(r_pannello.end.x, m, 0, 0)
+		r_moduli = Rect2(r_pannello.end.x + m, m, alt * am, alt)
+		var x1 := (r_moduli.end.x if am > 0 else r_pannello.end.x) + m
+		r_3d = Rect2(x1, m, W - x1 - m, alt)
+		r_pista = Rect2()
+		alto_tv = r_pannello.end.y + m
+		if vista:
+			vista.position = r_3d.position
+			vista.size = r_3d.size
+		k = r_pannello.size.x / PW
+		queue_redraw()
+		return
 	if tre_d:
 		if orizzontale:
 			# plancia a sinistra ad altezza piena (con i moduli); a destra la 3D in alto
@@ -197,7 +227,7 @@ func pos_spazio(sp: String) -> Vector2:
 func _draw() -> void:
 	if s.is_empty():
 		return
-	if not tre_d:
+	if not tre_d and not solo_plancia:
 		_disegna_pista()
 		_disegna_quota()
 	draw_texture_rect(t_pannello, r_pannello, false)

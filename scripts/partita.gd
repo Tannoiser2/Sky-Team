@@ -2,7 +2,9 @@ class_name Partita
 extends Control
 ## Una partita in corso: tavolo a sinistra, colonna dei comandi a destra.
 ## Modalità: "ia" (compagno guidato dal computer), "automa" (Copilota Automa ufficiale),
-## "host" (online, chi ospita applica le regole), "ospite" (online, manda le mosse a chi ospita).
+## "host" (online, chi ospita applica le regole), "ospite" (online, manda le mosse a chi ospita),
+## "tv" (il televisore applica le regole e mostra rotta, plancia e informazioni; i giocatori usano il telefono),
+## "telefono" (plancia e dadi di un giocatore, collegato al televisore).
 
 signal esci
 
@@ -11,6 +13,10 @@ var io := 0
 var modo := "ia"
 var rete: Rete
 var nome_altro := ""
+## modalità tv: chi occupa i posti (0 Pilota, 1 Copilota): "telefono", "ia" o "automa"
+var posti := {0: "ia", 1: "ia"}
+## modalità tv: identità dei telefoni -> posto
+var telefoni := {}
 
 var tavolo: Tavolo
 var comandi_vista: HBoxContainer
@@ -70,6 +76,12 @@ func _costruisci() -> void:
 	tavolo.io = io
 	if rete and rete.carica("skyteam_vista") == "2d":
 		tavolo.tre_d = false
+	if modo == "telefono":
+		tavolo.tre_d = false
+		tavolo.solo_plancia = true
+	elif modo == "tv":
+		tavolo.tre_d = true
+		tavolo.tv = true
 	add_child(tavolo)
 	tavolo.spazio_toccato.connect(_spazio)
 	var pc := PanelContainer.new()
@@ -117,7 +129,9 @@ func _costruisci() -> void:
 	l_turno = Stile.paragrafo("", 28, Stile.GIALLO)
 	l_turno.add_theme_font_override("font", Stile.grassetto())
 	b_gioco.add_child(l_turno)
-	b_gioco.add_child(Stile.etichetta("I TUOI DADI (%s)" % Motore.nome_ruolo(io).to_upper(), 22, Stile.BLU.lightened(0.4) if io == 0 else Stile.ARANCIO.lightened(0.2), Stile.grassetto()))
+	var l_miei := Stile.etichetta("I TUOI DADI (%s)" % Motore.nome_ruolo(io).to_upper(), 22, Stile.BLU.lightened(0.4) if io == 0 else Stile.ARANCIO.lightened(0.2), Stile.grassetto())
+	l_miei.visible = modo != "tv"
+	b_gioco.add_child(l_miei)
 	mano = Mano.new()
 	mano.colore = io
 	mano.custom_minimum_size = Vector2(300, 112)
@@ -207,12 +221,23 @@ func _ordina_colonna(largo: bool) -> void:
 	for n in [b_testa, b_gioco, b_diario, doppia, lato]:
 		if n.get_parent():
 			n.get_parent().remove_child(n)
-	if largo:
+	if largo and modo == "tv":
+		# televisore: a sinistra turno e diario di bordo, a destra scenario e abilità
+		colonna.add_child(doppia)
+		doppia.add_child(lato)
+		lato.add_child(b_gioco)
+		lato.add_child(b_diario)
+		doppia.add_child(b_testa)
+	elif largo:
 		colonna.add_child(doppia)
 		doppia.add_child(b_gioco)
 		doppia.add_child(lato)
 		lato.add_child(b_testa)
 		lato.add_child(b_diario)
+	elif modo == "telefono":
+		colonna.add_child(b_gioco)
+		colonna.add_child(b_testa)
+		colonna.add_child(b_diario)
 	else:
 		colonna.add_child(b_testa)
 		colonna.add_child(b_gioco)
@@ -224,7 +249,31 @@ func _disponi() -> void:
 	var W := size.x
 	var H := size.y
 	var pc: Control = get_node("Colonna")
-	if tavolo.tre_d:
+	if modo == "telefono":
+		# telefono in verticale: plancia in alto, dadi e comandi sotto; in orizzontale affiancati
+		if H >= W:
+			tavolo.position = Vector2.ZERO
+			tavolo.size = Vector2(W, minf(H * 0.6, W * 1.45))
+			tavolo._disponi()
+			var y1 := tavolo.r_pannello.end.y + 8
+			pc.position = Vector2(8, y1)
+			pc.size = Vector2(W - 16, H - y1 - 8)
+		else:
+			tavolo.position = Vector2.ZERO
+			tavolo.size = Vector2(W * 0.55, H)
+			tavolo._disponi()
+			var x2 := tavolo.r_moduli.end.x + 10 if tavolo.r_moduli.size.x > 0 else tavolo.r_pannello.end.x + 10
+			pc.position = Vector2(x2, 8)
+			pc.size = Vector2(W - x2 - 8, H - 16)
+		_ordina_colonna(false)
+	elif modo == "tv":
+		tavolo.position = Vector2.ZERO
+		tavolo.size = Vector2(W, H)
+		tavolo._disponi()
+		pc.position = Vector2(8, tavolo.alto_tv)
+		pc.size = Vector2(W - 16, H - tavolo.alto_tv - 8)
+		_ordina_colonna(true)
+	elif tavolo.tre_d:
 		# 3D in alto su tutta la larghezza, sotto la plancia a sinistra e le indicazioni a destra
 		tavolo.position = Vector2.ZERO
 		tavolo.size = Vector2(W, H)
@@ -245,7 +294,13 @@ func _disponi() -> void:
 		pc.position = Vector2(x, 8)
 		pc.size = Vector2(W - x - 8, H - 16)
 		_ordina_colonna(false)
-	if comandi_vista:
+	if comandi_vista and (modo == "telefono" or modo == "tv"):
+		comandi_vista.visible = modo == "tv"
+		if modo == "tv" and comandi_vista.get_child_count() > 0:
+			comandi_vista.get_child(0).visible = false   # la vista 2D non serve sul televisore
+		comandi_vista.position = tavolo.r_3d.position + Vector2(10, 10)
+		comandi_vista.size = comandi_vista.get_combined_minimum_size()
+	elif comandi_vista:
 		var r: Rect2 = tavolo.r_3d if tavolo.tre_d else tavolo.r_pista
 		comandi_vista.position = tavolo.position + r.position + Vector2(10, 10)
 		if not tavolo.tre_d and r.end.y + 66 < tavolo.size.y:
@@ -269,24 +324,28 @@ func _process(d: float) -> void:
 	if s.is_empty() or s["fase"] != "piazza":
 		return
 	var chi := chi_deve()
-	if (modo == "ia" or modo == "automa") and chi == 1 - io:
+	var tocca_ia: bool = (modo == "ia" or modo == "automa") and chi == 1 - io
+	if modo == "tv" and chi >= 0 and posti[chi] != "telefono":
+		tocca_ia = true
+	if tocca_ia:
 		attesa_ia -= d
 		if attesa_ia <= 0:
-			_mossa_ia()
+			_mossa_ia(chi)
 			attesa_ia = 0.9
 	else:
 		attesa_ia = 0.9 if attesa_ia <= 0 else attesa_ia
-	if Motore.ha(s, "tempo") and modo != "ospite":
+	if Motore.ha(s, "tempo") and modo != "ospite" and modo != "telefono":
 		if finale == null:
 			tempo -= d
 		l_tempo.text = "Tempo: %d" % maxi(0, ceili(tempo))
 		l_tempo.add_theme_color_override("font_color", Stile.ROSSO if tempo < 10 else Stile.GIALLO)
 		if tempo <= 0:
-			_esegui({"t": "scaduto", "c": io})
+			_esegui({"t": "scaduto", "c": chi if modo == "tv" and chi >= 0 else io})
 
-func _mossa_ia() -> void:
-	var c := 1 - io
-	if modo == "automa" and c == Motore.COPILOTA:
+func _mossa_ia(c := -1) -> void:
+	if c < 0:
+		c = 1 - io
+	if (modo == "automa" or (modo == "tv" and posti[c] == "automa")) and c == Motore.COPILOTA:
 		var copia := s.duplicate(true)
 		var carta := Automa.turno(copia)
 		s = copia
@@ -301,7 +360,7 @@ func _mossa_ia() -> void:
 	_esegui(a)
 
 func _esegui(a: Dictionary) -> void:
-	if modo == "ospite":
+	if modo == "ospite" or modo == "telefono":
 		rete.azione("mossa", a)
 		return
 	var e := Motore.applica(s, a)
@@ -327,6 +386,8 @@ func _dopo() -> void:
 	modifica = 0
 	if modo == "host" and rete:
 		rete.stato({"s": s, "host": io})
+	elif modo == "tv" and rete:
+		rete.stato({"s": s, "tv": true, "posti": telefoni})
 	_salva()
 	_aggiorna()
 
@@ -335,7 +396,7 @@ func _suono(n: String) -> void:
 		rete.suono(n)
 
 func _salva() -> void:
-	if rete == null or modo == "ospite":
+	if rete == null or modo == "ospite" or modo == "telefono":
 		return
 	var dati := JSON.stringify({"s": s, "io": io, "modo": modo})
 	if s["esito"] != "":
@@ -351,10 +412,31 @@ func ricevi(stato: Dictionary) -> void:
 	s = stato
 	if s["log"].size() != prima:
 		_suono("dado")
+	if finale and s["esito"] == "":
+		# il televisore ha fatto ripartire il volo
+		finale.queue_free()
+		finale = null
+		round_visto = -1
+		ultimo_log = 0
 	_aggiorna()
 
-## Mossa arrivata dall'ospite (modalità host)
-func mossa_remota(a: Dictionary) -> void:
+## Mossa arrivata dall'ospite (modalità host) o da un telefono (modalità tv)
+func mossa_remota(a: Dictionary, uid := "") -> void:
+	if modo == "tv":
+		if not telefoni.has(uid):
+			return
+		var c: int = int(telefoni[uid])
+		if posti[c] != "telefono":
+			return
+		a["c"] = c
+		if a.get("t") == "scaduto":
+			return
+		var e2 := Motore.applica(s, a)
+		if e2 == "":
+			_dopo()
+		else:
+			rete.stato({"s": s, "tv": true, "posti": telefoni, "errore": e2, "a_chi": uid})
+		return
 	if modo != "host":
 		return
 	a["c"] = 1 - io
@@ -426,6 +508,10 @@ func _aggiorna() -> void:
 	if s["round"] != round_visto and s["fase"] == "piazza":
 		round_visto = s["round"]
 		tempo = 60.0
+	# televisore: nessuna mano, solo di chi è il turno e quanti dadi restano
+	if modo == "tv":
+		_aggiorna_tv()
+		return
 	# turno
 	var chi := chi_deve()
 	var altro := Motore.nome_ruolo(1 - io)
@@ -517,6 +603,46 @@ func _aggiorna() -> void:
 	if s["fase"] == "fine":
 		_mostra_finale()
 
+func _nome_posto(c: int) -> String:
+	var n := Motore.nome_ruolo(c)
+	match posti[c]:
+		"telefono":
+			return n + " (telefono)"
+		"automa":
+			return n + " Automa"
+	return n + " (IA)"
+
+func _aggiorna_tv() -> void:
+	mano.visible = false
+	dadi_altro.visible = false
+	for c in riga_caffe.get_children():
+		c.queue_free()
+	for c in riga_azioni.get_children():
+		c.queue_free()
+	var chi := chi_deve()
+	if s["fase"] == "fine":
+		l_turno.text = "Partita finita."
+	elif s["pendente"][0] or s["pendente"][1]:
+		var p := 0 if s["pendente"][0] else 1
+		l_turno.text = "%s: sceglie i dadi da rilanciare." % _nome_posto(p)
+	elif chi >= 0:
+		l_turno.text = "Tocca al %s." % _nome_posto(chi)
+	l_turno.add_theme_font_size_override("font_size", 34)
+	l_turno.add_theme_color_override("font_color", Stile.GIALLO)
+	var righe := []
+	for c in 2:
+		var n: int = s["mano"][c].size()
+		righe.append("%s: %d dad%s da piazzare" % [Motore.nome_ruolo(c).to_upper(), n, "o" if n == 1 else "i"])
+	l_altro.text = "      ".join(righe)
+	l_altro.add_theme_font_size_override("font_size", 26)
+	l_aiuto.text = ""
+	tavolo.evidenzia = []
+	tavolo.valore_scelto = 0
+	tavolo.imposta(s)
+	_registro()
+	if s["fase"] == "fine":
+		_mostra_finale()
+
 func _rilancia() -> void:
 	var l := []
 	for i in da_rilanciare:
@@ -570,7 +696,7 @@ func _mostra_finale() -> void:
 	h.alignment = BoxContainer.ALIGNMENT_CENTER
 	h.add_theme_constant_override("separation", 16)
 	v.add_child(h)
-	if modo != "ospite":
+	if modo != "ospite" and modo != "telefono":
 		var b := Stile.bottone("Rigioca", 28)
 		b.pressed.connect(_rigioca)
 		h.add_child(b)
