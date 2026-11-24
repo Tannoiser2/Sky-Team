@@ -473,7 +473,7 @@ static func _pena_asse(s: Dictionary, a: int, fine: bool) -> float:
 		var c := Motore.casella(s, int(s["pos"]) + d - 1)
 		var v: String = c.get("v", "")
 		if v != "" and v[a + 2] == "x":
-			p += 2600.0 / d
+			p += 9000.0 / d
 	return p
 
 ## Qualità di una velocità (somma dei motori) in questo round
@@ -494,7 +494,8 @@ static func _qualita_velocita(s: Dictionary, somma: int) -> float:
 			return -30000.0
 		var v: String = Motore.casella(s, pos).get("v", "")
 		if v != "" and v[int(s["asse"]) + 2] == "x":
-			return -12000.0
+			# asse già deciso in questo round: avanzare qui è uno schianto sicuro
+			return -30000.0 if (s["spazi"].has("asse0") and s["spazi"].has("asse1")) else -12000.0
 		pos += 1
 	return _qualita_pos(s, pos, true)
 

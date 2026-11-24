@@ -430,16 +430,22 @@ static func controlla(s: Dictionary, c: int, i: int, sp: String, m: int = 0, aut
 		"car":
 			if allarme_attivo(s, "car"):
 				return "Il carrello è in allarme."
+			if s["carrello"][int(sp.substr(3))]:
+				return "Questa gamba del carrello è già abbassata."
 		"flap":
 			if allarme_attivo(s, "flap"):
 				return "I flap sono in allarme."
 			var n := int(sp.substr(4))
+			if s["flap"][n]:
+				return "Questo flap è già esteso."
 			if not automa and n > 0 and not s["flap"][n - 1]:
 				return "I flap si estendono in ordine, dall'alto in basso."
 		"fre":
 			if allarme_attivo(s, "fre"):
 				return "I freni sono in allarme."
 			var n2 := int(sp.substr(3))
+			if s["freni"][n2]:
+				return "Questo freno è già attivo."
 			if n2 > 0 and not s["freni"][n2 - 1]:
 				return "I freni si attivano in ordine: 2, poi 4, poi 6."
 		"radio0":
@@ -728,11 +734,27 @@ static func _avanza(s: Dictionary, passi: int) -> void:
 			_perdi(s, "Avete sorvolato l'aeroporto senza atterrare.")
 			return
 		# il simbolo della virata sta tra la casella attuale e la successiva
+		# regola: conta la virata della casella che si LASCIA (quella nella finestra Posizione attuale);
+		# se si avanza di 2, anche quella attraversata
 		var vir: String = casella(s, s["pos"]).get("v", "")
 		if vir != "" and vir[int(s["asse"]) + 2] == "x":
-			_perdi(s, "Virata mancata: l'asse non era nella posizione richiesta.")
+			_perdi(s, "Virata mancata: per lasciare la casella %d l'asse doveva essere %s, invece era %s." % [int(s["pos"]) + 1, descrivi_virata(vir), testo_asse(int(s["asse"]))])
 			return
 		s["pos"] += 1
+
+## Le inclinazioni permesse da una virata, in parole: «-2 o -1 (a sinistra)»
+static func descrivi_virata(v: String) -> String:
+	var ok: Array = []
+	for k in 5:
+		if v[k] == "o":
+			ok.append(testo_asse(k - 2))
+	var testo: String = " o ".join(ok) if ok.size() <= 2 else ", ".join(ok.slice(0, ok.size() - 1)) + " o " + ok[-1]
+	return testo
+
+static func testo_asse(a: int) -> String:
+	if a == 0:
+		return "0 (in piano)"
+	return "%+d (%s)" % [a, "a sinistra" if a < 0 else "a destra"]
 
 static func _perdi(s: Dictionary, motivo: String) -> void:
 	if s["esito"] != "":

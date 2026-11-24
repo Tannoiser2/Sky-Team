@@ -413,6 +413,9 @@ func _aggiorna() -> void:
 		info += "\nTURBOLENZA: dopo ogni dado piazzato si rilanciano gli altri."
 	if "n" in eff:
 		info += "\nSCARSA VISIBILITÀ: 2 dadi alla volta."
+	var vir: String = Motore.casella(s, s["pos"]).get("v", "")
+	if vir != "":
+		info += "\nVIRATA: per lasciare questa casella l'asse deve essere %s; ora è %s." % [Motore.descrivi_virata(vir), Motore.testo_asse(int(s["asse"]))]
 	if s["silenzio"]:
 		info += "\nRUMORE IN CABINA: non si può parlare nemmeno prima di tirare."
 	var ap := Motore.aeroporto(sc.get("codice", ""))
