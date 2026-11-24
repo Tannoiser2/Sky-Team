@@ -231,6 +231,8 @@ func _disponi() -> void:
 		tavolo._disponi()
 		var x0 := tavolo.larghezza_usata()
 		var y0 := tavolo.r_3d.end.y + 8
+		if tavolo.orizzontale:
+			x0 = tavolo.r_3d.position.x
 		pc.position = Vector2(x0, y0)
 		pc.size = Vector2(W - x0 - 8, H - y0 - 8)
 		_ordina_colonna(pc.size.x > 640)
@@ -413,6 +415,9 @@ func _aggiorna() -> void:
 		info += "\nSCARSA VISIBILITÀ: 2 dadi alla volta."
 	if s["silenzio"]:
 		info += "\nRUMORE IN CABINA: non si può parlare nemmeno prima di tirare."
+	var ap := Motore.aeroporto(sc.get("codice", ""))
+	if not ap.is_empty():
+		info += "\nAeroporto vero: %s (%s), %s. Pista %s, lunga %s m, a %s m di quota." % [ap["nome"], ap["icao"], ap["citta"], ap["atterra"], int(ap["lunghezza_m"]), int(ap["quota_m"])]
 	l_info.text = info
 	l_tempo.visible = Motore.ha(s, "tempo") and s["fase"] == "piazza"
 	if s["round"] != round_visto and s["fase"] == "piazza":

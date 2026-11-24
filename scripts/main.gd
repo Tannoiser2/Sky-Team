@@ -112,7 +112,7 @@ func _home() -> void:
 	stato_rete = Stile.paragrafo("", 24, Stile.GIALLO)
 	stato_rete.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	v.add_child(stato_rete)
-	var cr := Stile.paragrafo("Sky Team è un gioco di Luc Rémond, illustrato da Eric Hibbeler e Adrien Rives, pubblicato da Le Scorpion Masqué. Versione digitale per la ludoteca.", 18, Stile.TESTO_DEBOLE)
+	var cr := Stile.paragrafo("Sky Team è un gioco di Luc Rémond, illustrato da Eric Hibbeler e Adrien Rives, pubblicato da Le Scorpion Masqué. Versione digitale per la ludoteca. Dati degli aeroporti: OurAirports. Immagini satellitari: Sentinel-2 cloudless di EOX IT Services (s2maps.eu), con dati Copernicus Sentinel 2020 modificati.", 18, Stile.TESTO_DEBOLE)
 	cr.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	v.add_child(cr)
 

@@ -48,6 +48,7 @@ var r_moduli := Rect2()
 var k := 1.0                  # scala del pannello
 
 var tre_d := true
+var orizzontale := true
 var vista: Vista3D
 var r_3d := Rect2()
 var t_pannello: Texture2D
@@ -99,13 +100,22 @@ func _disponi() -> void:
 	var aq := 400.0 / 1672.0
 	var ar := PW / PH
 	var am := 0.2 if _ha_moduli() else 0.0
+	orizzontale = W > H * 1.25
 	if tre_d:
-		# vista 3D in alto su tutta la larghezza; sotto, a sinistra, plancia e moduli
-		r_3d = Rect2(m, m, W - 2 * m, roundf(H * 0.37))
-		alt = H - r_3d.end.y - 2 * m
-		r_pannello = Rect2(m, r_3d.end.y + m, alt * ar, alt)
-		r_quota = Rect2(r_pannello.end.x, r_pannello.position.y, 0, 0)
-		r_moduli = Rect2(r_pannello.end.x + m, r_pannello.position.y, alt * am, alt)
+		if orizzontale:
+			# plancia a sinistra ad altezza piena (con i moduli); a destra la 3D in alto
+			r_pannello = Rect2(m, m, alt * ar, alt)
+			r_quota = Rect2(r_pannello.end.x, m, 0, 0)
+			r_moduli = Rect2(r_pannello.end.x + m, m, alt * am, alt)
+			var x0 := (r_moduli.end.x if am > 0 else r_pannello.end.x) + m
+			r_3d = Rect2(x0, m, W - x0 - m, roundf(H * 0.5))
+		else:
+			# vista 3D in alto su tutta la larghezza; sotto, a sinistra, plancia e moduli
+			r_3d = Rect2(m, m, W - 2 * m, roundf(H * 0.37))
+			alt = H - r_3d.end.y - 2 * m
+			r_pannello = Rect2(m, r_3d.end.y + m, alt * ar, alt)
+			r_quota = Rect2(r_pannello.end.x, r_pannello.position.y, 0, 0)
+			r_moduli = Rect2(r_pannello.end.x + m, r_pannello.position.y, alt * am, alt)
 		r_pista = Rect2()
 		if vista:
 			vista.position = r_3d.position

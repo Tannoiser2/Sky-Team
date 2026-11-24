@@ -40,6 +40,8 @@ static var _dati_scenari := []
 
 # ------------------------------------------------------------------ dati
 
+static var _dati_aeroporti: Dictionary = {}
+
 static func piste() -> Dictionary:
 	if _dati_piste.is_empty():
 		_dati_piste = JSON.parse_string(FileAccess.get_file_as_string("res://assets/dati/piste.json"))
@@ -49,6 +51,12 @@ static func scenari() -> Array:
 	if _dati_scenari.is_empty():
 		_dati_scenari = JSON.parse_string(FileAccess.get_file_as_string("res://assets/dati/scenari.json"))
 	return _dati_scenari
+
+## Dati veri dell'aeroporto (OurAirports): pista, soglia, direzione, lunghezza, quota
+static func aeroporto(codice: String) -> Dictionary:
+	if _dati_aeroporti.is_empty():
+		_dati_aeroporti = JSON.parse_string(FileAccess.get_file_as_string("res://assets/dati/aeroporti.json"))
+	return _dati_aeroporti.get(codice, {})
 
 static func scenario(id: String) -> Dictionary:
 	for s in scenari():

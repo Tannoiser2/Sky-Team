@@ -14,6 +14,7 @@ Pilota (blu) e Copilota (arancione) piazzano in silenzio i dadi sulla plancia di
 - **Vista 3D**: il modellino dell'aereo in alto, la rotta che scende fino alla pista, gli aerei del traffico (o i pinguini) sui traguardi delle caselle. Dove c'è una virata la rotta piega e un arco mostra le inclinazioni permesse (verdi) e vietate (rosse); l'aereo si inclina con l'asse, flap e carrello si muovono sul modello. Sotto l'aereo un plinto con carrello, flap, freni, caffè, rilanci e cherosene. La vista 3D occupa la fascia alta dello schermo; sotto, a sinistra, la plancia originale per piazzare i dadi e a destra dadi, azioni, informazioni e diario. Un tasto passa alla vecchia vista 2D.
 - **Comandi della vista 3D**: mouse (sinistro ruota, destro sposta, rotella zoom, doppio clic centra) e tocco (un dito sposta, due dita pizzicano per lo zoom e ruotano).
 - **Scelta del volo per aeroporto**: schede Gioco base, Turbolenze, Promozionali; una riga per aeroporto con i suoi voli colorati per difficoltà.
+- **Aeroporti veri**: sotto ogni pista c'è l'immagine satellitare vera dell'aeroporto, girata in modo che la pista del gioco stia sopra quella reale (1 unità della scena = 500 m). Pista, lunghezza, quota e città vengono da OurAirports (`assets/dati/aeroporti.json`); le immagini (`assets/img/mappe/`) si rigenerano con l'Action «Mappe satellitari» (`tools/mappe.py`). Fonti: OurAirports (pubblico dominio); Sentinel-2 cloudless di EOX IT Services, https://s2maps.eu (CC BY-NC-SA 4.0, con dati Copernicus Sentinel 2020 modificati).
 - Tutto in italiano.
 
 ## Struttura

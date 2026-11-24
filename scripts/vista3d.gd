@@ -10,7 +10,8 @@ extends SubViewportContainer
 const D := 4.6              # distanza tra due caselle
 const HMAX := 5.5          # altezza a 6000 piedi
 const SCALA_AEREO := 0.5
-const GRADI_VIRATA := 28.0   # gradi di curva per ogni tacca di inclinazione richiesta
+const METRI_UNITA := 500.0   # metri veri per unità della scena
+const GRADI_VIRATA := 40.0   # gradi di curva per ogni tacca di inclinazione richiesta
 
 var vp: SubViewport
 var mondo: Node3D
@@ -45,6 +46,8 @@ var zoom := 1.0
 var h_cam := 0.0
 var dist_fit := 0.0
 var gia_visibile := -1
+var mat_nuvole: Array = []
+var colori_mappa := {}
 var bersaglio := Vector3.ZERO
 var spost := Vector3.ZERO
 var tocchi := {}
@@ -291,6 +294,8 @@ func _crea_basamento() -> void:
 	et_kero = _etichetta("", 30, Stile.GIALLO)
 	basamento.add_child(et_kero)
 	et_quota = _etichetta("", 44, Color.WHITE)
+	et_quota.no_depth_test = true
+	et_quota.render_priority = 20
 	mondo.add_child(et_quota)
 
 func _gruppo(t: String, p: Vector3) -> void:
@@ -347,7 +352,7 @@ func _costruisci_rotta() -> void:
 		# la rotta curva verso l'inclinazione richiesta dalla virata (almeno 25 gradi)
 		var giro: float = 0.0
 		if absf(vi[0]) > 0.01:
-			giro = signf(vi[0]) * maxf(25.0, GRADI_VIRATA * absf(vi[0]))
+			giro = signf(vi[0]) * clampf(GRADI_VIRATA * absf(vi[0]), 40.0, 75.0)
 		var h2: float = h + deg_to_rad(giro)
 		var y0: float = alt0 if i <= pos0 else alt0 * (1.0 - float(i - pos0) / maxi(1, ultima - pos0))
 		var y1: float = alt0 if i + 1 <= pos0 else alt0 * (1.0 - float(i + 1 - pos0) / maxi(1, ultima - pos0))
@@ -375,6 +380,7 @@ func _costruisci_rotta() -> void:
 	for i in nodi_casella.size():
 		_traguardo(i, cas[i])
 	_terreno_e_pista(nodi_casella[-1], h)
+	_nuvole()
 
 func _nastro(dove: Node3D, pts: Array, banca: float) -> void:
 	var st := SurfaceTool.new()
@@ -458,49 +464,159 @@ func _traguardo(i: int, c: Dictionary) -> void:
 		l.name = "Info"
 		n.add_child(l)
 
+## Materiale delle nuvole: sempre rivolte alla telecamera e trasparenti quando sono più vicine
+## della scena, così non coprono mai l'aereo e la rotta
+func _mat_nuvola(n: int) -> StandardMaterial3D:
+	if mat_nuvole.size() > n:
+		return mat_nuvole[n]
+	var m := StandardMaterial3D.new()
+	m.albedo_texture = Stile.tex("res://assets/img/nuvola%d.webp" % n)
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.billboard_mode = BaseMaterial3D.BILLBOARD_FIXED_Y
+	m.distance_fade_mode = BaseMaterial3D.DISTANCE_FADE_PIXEL_ALPHA
+	m.cull_mode = BaseMaterial3D.CULL_DISABLED
+	mat_nuvole.append(m)
+	return m
+
+## Nuvole sparse intorno alla rotta, lontane dal corridoio di volo
+func _nuvole() -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash(s["pista"]) + 3
+	var c := Vector3.ZERO
+	for p in nodi_casella:
+		c += p
+	c /= nodi_casella.size()
+	var raggio := 0.0
+	for p in nodi_casella:
+		raggio = maxf(raggio, Vector3(p.x - c.x, 0, p.z - c.z).length())
+	var messe := 0
+	var tentativi := 0
+	while messe < 26 and tentativi < 400:
+		tentativi += 1
+		var ang := rng.randf() * TAU
+		var dist := rng.randf_range(0.5, 1.25) * (raggio + 6.0)
+		var q := Vector3(c.x + cos(ang) * dist, rng.randf_range(HMAX + 1.2, HMAX + 4.0), c.z + sin(ang) * dist)
+		var vicino := false
+		for p in nodi_casella:
+			if Vector2(p.x - q.x, p.z - q.z).length() < 7.0:
+				vicino = true
+				break
+		if vicino:
+			continue
+		var sp := MeshInstance3D.new()
+		var qm := QuadMesh.new()
+		var scala := rng.randf_range(4.5, 8.5)
+		qm.size = Vector2(scala, scala * 0.5)
+		sp.mesh = qm
+		sp.material_override = _mat_nuvola(messe % 3)
+		sp.transparency = 1.0 - rng.randf_range(0.65, 0.9)
+		sp.position = q
+		nodo_rotta.add_child(sp)
+		messe += 1
+
 func _terreno_e_pista(fine: Vector3, h: float) -> void:
 	var ghiaccio: bool = Motore.ha(s, "ghiaccio") or s["speciale"] == "nzir"
+	var codice: String = Motore.scenario(s["scenario"]).get("codice", "")
+	var ap := Motore.aeroporto(codice)
+	var via_mappa := "res://assets/img/mappe/%s.webp" % codice.to_lower()
+	var mappa: Texture2D = Stile.tex(via_mappa) if ResourceLoader.exists(via_mappa) else null
+	var fondo := Color("dfe8ef") if ghiaccio else Color("4f6b43")
+	if mappa:
+		fondo = _colore_medio(codice, mappa)
 	var t := MeshInstance3D.new()
 	var pm := PlaneMesh.new()
 	pm.size = Vector2(700, 700)
 	t.mesh = pm
-	t.material_override = _mat(Color("dfe8ef") if ghiaccio else Color("4f6b43"))
+	t.material_override = _mat(fondo)
 	t.position = Vector3(fine.x, -0.05, fine.z - 100)
 	nodo_rotta.add_child(t)
-	# campi e strade, per dare profondità
-	var rng := RandomNumberGenerator.new()
-	rng.seed = hash(s["pista"])
-	for k in 70:
-		var c := Color("5d7a4c") if k % 3 else Color("6b7f4a")
-		if ghiaccio:
-			c = Color("c9d6e0") if k % 2 else Color("eef3f7")
-		var b := _box(Vector3(rng.randf_range(6, 22), 0.02, rng.randf_range(6, 22)), c)
-		b.position = Vector3(rng.randf_range(-90, 90), -0.03, rng.randf_range(-140, 40)) + Vector3(fine.x, 0, fine.z * 0.5)
-		b.rotation.y = rng.randf_range(0, PI)
-		nodo_rotta.add_child(b)
-	# pista d'atterraggio
+	if mappa and not ap.is_empty():
+		# immagine satellitare vera, centrata sulla soglia e girata in modo che la pista
+		# reale coincida con quella del gioco (1 unità = METRI_UNITA metri)
+		var lato_m: float = 2048.0 * 156543.03392 * cos(deg_to_rad(float(ap["lat"]))) / 8192.0
+		var mm := MeshInstance3D.new()
+		var pq := PlaneMesh.new()
+		pq.size = Vector2.ONE * lato_m / METRI_UNITA
+		mm.mesh = pq
+		var mt := StandardMaterial3D.new()
+		mt.albedo_texture = mappa
+		mt.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_DEPTH_PRE_PASS
+		mt.roughness = 1.0
+		mt.albedo_color = Color(0.92, 0.92, 0.92)
+		mm.material_override = mt
+		mm.position = Vector3(fine.x, -0.02, fine.z)
+		mm.rotation.y = deg_to_rad(float(ap["rotta"])) - h
+		nodo_rotta.add_child(mm)
+	else:
+		# campi e strade, per dare profondità
+		var rng := RandomNumberGenerator.new()
+		rng.seed = hash(s["pista"])
+		for k in 70:
+			var c := Color("5d7a4c") if k % 3 else Color("6b7f4a")
+			if ghiaccio:
+				c = Color("c9d6e0") if k % 2 else Color("eef3f7")
+			var b := _box(Vector3(rng.randf_range(6, 22), 0.02, rng.randf_range(6, 22)), c)
+			b.position = Vector3(rng.randf_range(-90, 90), -0.03, rng.randf_range(-140, 40)) + Vector3(fine.x, 0, fine.z * 0.5)
+			b.rotation.y = rng.randf_range(0, PI)
+			nodo_rotta.add_child(b)
+	# pista d'atterraggio, lunga come quella vera
+	var lung := 6.0
+	if not ap.is_empty():
+		lung = clampf(float(ap["lunghezza_m"]) / METRI_UNITA, 3.0, 9.0)
 	var n := Node3D.new()
 	n.position = Vector3(fine.x, 0, fine.z)
 	n.rotation.y = -h
 	nodo_rotta.add_child(n)
-	var asfalto := _box(Vector3(1.6, 0.06, 6), Color("3a3d42") if not ghiaccio else Color("b8c7d3"))
-	asfalto.position = Vector3(0, 0, -2.3)
+	var bordo := _box(Vector3(1.0, 0.06, lung + 0.1), Color("f2f2ee"))
+	bordo.position = Vector3(0, 0.02, -lung * 0.5)
+	n.add_child(bordo)
+	var asfalto := _box(Vector3(0.86, 0.06, lung), Color("34373c") if not ghiaccio else Color("aebdca"))
+	asfalto.position = Vector3(0, 0.03, -lung * 0.5)
 	n.add_child(asfalto)
-	for k in 5:
-		var r := _box(Vector3(0.1, 0.02, 0.6), Color.WHITE)
-		r.position = Vector3(0, 0.05, 0.3 - k * 1.15)
+	var strisce := int(lung / 1.2)
+	for k in strisce:
+		var r := _box(Vector3(0.07, 0.02, 0.5), Color.WHITE)
+		r.position = Vector3(0, 0.065, -0.6 - k * 1.2)
 		n.add_child(r)
 	for lato in [-1.0, 1.0]:
-		for k in 4:
-			var lu := _sfera(0.05, Color("ffcb2f"), true)
-			lu.position = Vector3(lato * 1.0, 0.08, 0.8 - k * 2.0)
+		for k in int(lung / 1.5) + 1:
+			var lu := _sfera(0.045, Color("ffcb2f"), true)
+			lu.position = Vector3(lato * 0.55, 0.06, -k * 1.5)
 			n.add_child(lu)
-	var cod := _etichetta(Motore.scenario(s["scenario"]).get("codice", ""), 120, Color.WHITE)
-	cod.billboard = BaseMaterial3D.BILLBOARD_DISABLED
-	cod.rotation_degrees.x = -90
-	cod.position = Vector3(0, 0.06, -4.6)
-	cod.pixel_size = 0.006
-	n.add_child(cod)
+	var num := _etichetta(str(ap.get("atterra", codice)), 90, Color.WHITE)
+	num.billboard = BaseMaterial3D.BILLBOARD_DISABLED
+	num.rotation_degrees.x = -90
+	num.position = Vector3(0, 0.07, -0.45)
+	num.pixel_size = 0.004
+	n.add_child(num)
+	if not ap.is_empty():
+		var info := _etichetta("%s  pista %s\n%s m, quota %s m" % [codice, ap["atterra"], int(ap["lunghezza_m"]), int(ap["quota_m"])], 40, Color("e8eef8"))
+		info.position = Vector3(0, 1.3, -lung * 0.5)
+		n.add_child(info)
+
+## Colore medio della mappa, per il terreno che la circonda
+func _colore_medio(codice: String, tex: Texture2D) -> Color:
+	if colori_mappa.has(codice):
+		return colori_mappa[codice]
+	var c := Color("4f6b43")
+	var im := tex.get_image()
+	if im:
+		im = im.duplicate()
+		if im.is_compressed():
+			im.decompress()
+		im.resize(8, 8, Image.INTERPOLATE_BILINEAR)
+		var somma := Color(0, 0, 0)
+		var n := 0
+		for y in range(2, 6):
+			for x in range(2, 6):
+				var p := im.get_pixel(x, y)
+				somma += Color(p.r, p.g, p.b)
+				n += 1
+		c = Color(somma.r / n, somma.g / n, somma.b / n) * 0.92
+		c.a = 1.0
+	colori_mappa[codice] = c
+	return c
 
 # ------------------------------------------------------------------ stato
 
@@ -687,6 +803,10 @@ func _process(dt: float) -> void:
 	var centro := bersaglio + spost
 	cam.position = centro + dir * dist_fit * zoom
 	cam.look_at(centro, Vector3.UP)
+	var dc := cam.position.distance_to(centro)
+	for m in mat_nuvole:
+		m.distance_fade_min_distance = dc * 0.75
+		m.distance_fade_max_distance = dc * 1.05
 
 ## Centro e distanza perché aereo, basamento, rotta e pista stiano tutti nell'inquadratura
 func _inquadra(pa: Vector3, dir: Vector3) -> Array:
